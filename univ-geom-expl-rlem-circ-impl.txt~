@@ -1,0 +1,32 @@
+Universal Geometrically Explicit RLEM Circuits, and their Possible
+Implementation
+
+jpt4 UTC20150909
+
+This note demonstrates by construction the computational universality
+of geometrically explicit logic circuits (GELCs) composed of certain
+Reversible Logic Elements with Memory [0]. It is known that circuits
+of 2-state 3-symbol RLEMs are computationally universal [0], without
+formal regard for the geometry of their wires. GELCs built from
+{3-453, 3-3}, {3-90, 3-3}, and {3-18, 3-18w [1]} can simulate the
+universal circuits of 3-453, 3-90, and 3-18, with the additional
+constraint of mandating a certain form to signal transport wires.
+
+A logic circuit is geometrically explicit if it is composed of logic
+circuit elements which specify, as part of their formal definitions,
+the geometry (i.e. the size and shape) of the paths connecting the
+output and input terminals of symbol processing. Equivalently, a GELC
+considers the signal transport element - the wire - as a first class
+component, which must be specified alongside the processing elements
+of a logic circuit, rather than being left subjective to
+implementation (Fig. 1).
+
+RLEMs 3-453, 3-90, and 3-18 were chosen for translation into
+geometrically explicit form because their signal routing behavior can
+be interpreted as emitting a symbol to the "right" or "left" output
+terminal, relative to the symbol's input terminal. Thus, one memory
+state encodes "Right Turn" routing, the other "Left Turn" routing
+(Fig. 2.). In addition to these symbol processing elements, the GELCs
+constructed use the degenerate RLEMs 3-3 and 3-18w
+
+[0] 
