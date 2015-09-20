@@ -29,8 +29,17 @@
 							 (cond
 								['wire (begin (transfer) (transmit) (reset)
 															)]
+								['gate (begin (transfer) (transmit) (reset) (flip-mem)
+															)]
 								[else `(,id . no-action)]
 								))]
+						[flip-mem
+						 (lambda ()
+							 (case mem
+								 ['0 (state-change 'mem 1)]
+								 ['1 (state-change 'mem 0)]
+								 [else 'bad-mem-flip]
+								 ))]
 						[transfer
 						 (lambda ()
 							 (cond
@@ -90,29 +99,45 @@
 		(display (r3 'state))	(newline)
 		))
 
-(define (test)
+(define (dispwn txt)
+	(begin
+		(display txt)
+		(newline)))
+
+(define (config)
 	(begin
 		(display "Tabula rasa") (newline)
-		  (disp-all-state)
+		(disp-all-state)
 		(r1 '(set id 1))
 		(r2 '(set id 2))
 		(r3 '(set id 3))
 		(r0 `(set nbrs (,r1 ,r2 ,r3)))  ;;  B/A'->r1 C/B'->r2 A/C'->r3
+		(r1 `(set nbrs (,r0 0 0)))
+		(r2 `(set nbrs (0 ,r0 0)))
+		(r3 `(set nbrs (0 0 ,r0)))
+		(display "Generic config") (newline)
+		(disp-all-state)
+		))
+
+(define (wire-test)
+	(begin
 		(r0 '(set role wire))
 		(r0 '(set terms (1 0 0 0 0 0)))  ;;  term A
 		(display "Turn right config") (newline)
-  		(disp-all-state)
+		(disp-all-state)
 		(r0 'step)		
 		(display "Turn right result") (newline)
-	  	(disp-all-state)
+		(disp-all-state)
 		(r0 '(set mem 1))
 		(r0 '(set terms (0 1 0 0 0 0)))  ;;  term B
 		(display "Turn left config") (newline)
-		  (disp-all-state)
+		(disp-all-state)
 		(r0 'step)
     (display "Turn left result") (newline)
-		  (disp-all-state)
-		)
-)
+		(disp-all-state)
+		))
 
-(test)
+(begin
+	(config)
+	(wire-test))
+
