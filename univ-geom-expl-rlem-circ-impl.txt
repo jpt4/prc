@@ -1,18 +1,19 @@
 Universal Geometrically Explicit RLEM Circuits, and Their Possible
 Implementation
 
-jpt4 UTC20150909
+jpt4 UTC20150909 Rev. UTC20150915
 
 This note demonstrates by construction the computational universality
 of geometrically explicit logic circuits (GELCs) composed of certain
-Reversible Logic Elements with Memory. It is known that circuits of
-2-state 3-symbol RLEMs are computationally universal [0], though
-without formal regard for the geometry of their wires. GELCs built
-from sets of RLEMs {3-453, 3-3}, {3-90, 3-3}, and {3-18, 3-18w} can
-simulate the universal circuits of 3-453, 3-90, and 3-18,
+Reversible Logic Elements with Memory (RLEM). It is known that
+circuits of 2-state 3-symbol RLEMs are computationally universal [0],
+though without formal regard for the geometry of their wires. GELCs
+built from sets of RLEMs {3-453, 3-3}, {3-90, 3-3}, and {3-18, 3-18w}
+can simulate the universal circuits of 3-453, 3-90, and 3-18,
 respectively, with the additional constraint of mandating a certain
-form for signal transport wires. A possible physical implementation of
-RLEM comprised GELCs via electromagnetic wave circulators is proposed.
+regular tiling of RLEM nodes within a lattice that limits the design
+of signal transport wires. A possible physical implementation of RLEM
+comprised GELCs via electromagnetic wave circulators is discussed.
 
 A logic circuit is geometrically explicit if it is composed of logic
 circuit elements which specify, as part of their formal definitions,
