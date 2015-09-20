@@ -25,7 +25,11 @@
 															 (nbrs . ,nbrs)))
 								 ))]
 						[act (lambda ()
-									 'act)]
+									 (case role
+										 ['wire `(,id . wire)]
+;										 ['wire (transfer terms nbrs)]
+										 [else `(,id . no-action)]
+										 ))]
 
 						#;						[act (lambda ()							
 						(case role
@@ -43,7 +47,7 @@
 												(cond
 												 [(eq? '(1 0 0 0 0 0) sig)
 													(((cadr des) 'set) 'terms '(0 0 0 1 0 0))]
-												 [(eq? '(0 0 0 0 0 0) sig) 'nostate-change]))]
+												 [(eq? '(0 0 0 0 0 0) sig) 'no-transfer]))]
 						)
 					 (lambda (msg)
 						 (cond
@@ -53,12 +57,18 @@
 										 [n (cddr msg)])
 								 (begin
 									 (state-change o n)
-									 (act)))]
-							[else state]))))
-
-
+									 ))]
+							[(eq? (car msg) 'step) (act)]
+							[else 'ill-msg]))))
 
 (define r1 (rlem3453))
 (define r2 (rlem3453))
-(r1 '(set nbrs (0 r2 0)))
-																				;((r1 'set) 'role 'wire)
+
+(define (test)
+	(begin
+		(r2 '(set id 1))
+		(r1 '(set nbrs (0 r2 0)))
+		(r1 '(set role wire))
+		(r1 '(set terms (1 0 0 0 0 0)))
+		)
+)
