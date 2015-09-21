@@ -6,6 +6,7 @@
 						[role 'stem]            ;;  stem gate wire
 						[mem 0]
 						[buf '()]               ;;  stem cell msg buffer
+						[stin '(_ . _)]         ;;  stem cell 0/1 terms
 						[terms '(0 0 0 0 0 0)]  ;;  A B C A' B' C'
 						[nbrs '(0 0 0)]         ;;  B/A' C/B' A/C'
 						[state `((id . ,id) (role . ,role) (mem . ,mem) (buf . ,buf) 
@@ -31,6 +32,10 @@
 															)]
 								['gate (begin (transfer) (transmit) (reset) (flip-mem)
 															)]
+								['stem (let ([inp (list-ref terms 1)])
+												 (cond
+													[(eq? (car inp)) 
+												 )]
 								[else `(,id . no-action)]
 								))]
 						[flip-mem
