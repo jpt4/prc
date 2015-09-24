@@ -10,7 +10,7 @@
 						[terms '(0 0 0 0 0 0)]  ;;A B C A' B' C'
 						[nbrs '(0 0 0)]         ;;B/A' C/B' A/C'
 						[state `((id . ,id) (role . ,role) (mem . ,mem) (buf . ,buf) 
-										 (terms . ,terms) (nbrs . ,nbrs))]
+										 (stin . ,stin) (terms . ,terms) (nbrs . ,nbrs))]
 						[state-change
 						 (lambda (cur new)
 							 (begin
