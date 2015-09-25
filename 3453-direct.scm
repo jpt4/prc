@@ -35,36 +35,29 @@
 								['gate (begin (transfer) (transmit) (reset) (flip-mem)
 															)]
 								['stem (let ([inp (list-ref terms 1)])
-												 (begin
-													 (write-buffer inp)
-													 (parse-buffer)
-													 ))]											 
+												 (cond
+													[(eq? (car stin) inp)
+													 (state-change 'buf (append buf '(0)))]  ;;inp=0
+													[(eq? (cdr stin) inp)
+													 (state-change 'buf (append buf '(1)))]  ;;inp=1
+													[(and (number? (car stin)) (eq? (cadr stin) '_))
+													 (begin
+														 (state-change 'stin (cons (car stin) inp))
+														 (state-change 'buf (append buf '(1)))
+														 )]
+													[(and (number? (cadr stin)) (eq? (car stin) '_))
+													 (begin
+														 (state-change 'stin (cons inp (cdr stin)))
+														 (state-change 'buf (append buf '(0)))
+														 )]
+													[(eq? stin '(_ . _))
+													 (begin
+														 (state-change 'stin (cons inp (cdr stin)))
+														 (state-change 'buf (append buf '(0)))
+														 )]
+													))]
 								[else `(,id . no-action)]
 								))]								
-						[write-buffer
-						 (lambda (i)
-							 (cond
-								[(eq? (car stin) inp)
-								 (state-change 'buf (append buf '(0)))]  ;;inp=0
-								[(eq? (cdr stin) inp)
-								 (state-change 'buf (append buf '(1)))]  ;;inp=1
-								[(and (number? (car stin)) (eq? (cadr stin) '_))
-								 (begin
-									 (state-change 'stin (cons (car stin) inp))
-									 (state-change 'buf (append buf '(1)))
-									 )]
-								[(and (number? (cadr stin)) (eq? (car stin) '_))
-								 (begin
-									 (state-change 'stin (cons inp (cdr stin)))
-									 (state-change 'buf (append buf '(0)))
-									 )]
-								[(eq? stin '(_ . _))
-								 (begin
-									 (state-change 'stin (cons inp (cdr stin)))
-									 (state-change 'buf (append buf '(0)))
-									 )]
-								))]
-								)
 						[flip-mem
 						 (lambda ()
 							 (case mem
@@ -116,7 +109,6 @@
 								 (begin
 									 (state-change o n)
 									 ))]
-							[(eq? (car msg) 'init) 
 							[else 'ill-msg]))))
 
 (define r0 (rlem3453))
