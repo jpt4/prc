@@ -34,14 +34,21 @@
 															)]
 								['gate (begin (transfer) (transmit) (reset) (flip-mem)
 															)]
-								['stem (let ([inp (list-ref terms 1)])
-												 (begin
-													 (write-buffer inp)
-													 (parse-buffer)
-													 ))]											 
+								['stem (if (eq? (length buf) 8)
+													 (parse-buf)
+													 (let ([inp (list-ref terms 1)])
+														 (write-buf inp)
+														 ))]
 								[else `(,id . no-action)]
-								))]								
-						[write-buffer
+								))]							
+						[parse-buf
+						 (lambda ()
+							 (let* ([dest (list-head buf 2)]
+											[inst (case (list-tail buf 2)
+															['(0 0 0) `(set terms ,(calc-term-inp 0))]
+															['(0 0 1) `(set terms ,(calc-term-inp 1))]
+															['(0 1 0
+						[write-buf
 						 (lambda (i)
 							 (cond
 								[(eq? (car stin) inp)
@@ -132,7 +139,7 @@
 		(display (r3 'state))	(newline)
 		))
 
-(define (dispwn txt)
+(define (dispnl txt)  ;;display text followed by newline
 	(begin
 		(display txt)
 		(newline)))
