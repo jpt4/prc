@@ -21,7 +21,7 @@
 				['mem (set! mem new)]
 				['terms (set! terms new)]
 				['nbrs (set! nbrs new)]
-				[else 'err])
+				[else (dispnl 'err)])
 			(set! state `((id . ,id) (role . ,role) (mem . ,mem)
 										(buf . ,buf) (stin . ,stin) (terms . ,terms) 
 										(nbrs . ,nbrs)))
@@ -34,10 +34,11 @@
 										)]
 			['stem (if (eq? (length buf) 5)
 								 (parse-buf)
-								 (let ([inp (list-ref terms 1)])
+								 (let ([inp (list-index terms 1)])
 									 (write-buf inp)
+									 (dispnl inp)
 									 ))]
-			[else `(,id . no-action)]
+			[else (dispnl `(,id . no-action))]
 			))							
 	(define (parse-buf)
 		(let* ([dest (case (list-head buf 2)
@@ -48,18 +49,18 @@
 									 ['(0 0 1) `(set terms ,(calc-term-inp 1))]
 									 ['(0 1 0) `ack])])
 			'app))
-	(define (write-buf i)
+	(define (write-buf inp)
 		(cond
 		 [(eq? (car stin) inp)
 			(state-change 'buf (append buf '(0)))]  ;;inp=0
 		 [(eq? (cdr stin) inp)
 			(state-change 'buf (append buf '(1)))]  ;;inp=1
-		 [(and (number? (car stin)) (eq? (cadr stin) '_))
+		 [(and (number? (car stin)) (eq? (cdr stin) '_))
 			(begin
 				(state-change 'stin (cons (car stin) inp))
 				(state-change 'buf (append buf '(1)))
 				)]
-		 [(and (number? (cadr stin)) (eq? (car stin) '_))
+		 [(and (number? (cdr stin)) (eq? (car stin) '_))
 			(begin
 				(state-change 'stin (cons inp (cdr stin)))
 				(state-change 'buf (append buf '(0)))
@@ -69,12 +70,13 @@
 				(state-change 'stin (cons inp (cdr stin)))
 				(state-change 'buf (append buf '(0)))
 				)]
+		 [else (dispnl 'bad-buf-write)]
 		 ))
 	(define (flip-mem)
 		(case mem
 			['0 (state-change 'mem 1)]
 			['1 (state-change 'mem 0)]
-			[else 'bad-mem-flip]
+			[else (dispnl 'bad-mem-flip)]
 			))
 	(define (transfer)
 		(cond
@@ -89,7 +91,7 @@
 																(list-ref terms 2)       ;;C->A'
 																(list-ref terms 0)       ;;A->B'
 																(list-ref terms 1))))]   ;;B->C'
-		 [else 'bad-transfer]
+		 [else (dispnl 'bad-transfer)]
 		 ))
 	(define (transmit)
 		(cond
@@ -100,12 +102,12 @@
 																			(list-ref terms 4))
 																'(0 0 0))])
 				(target `(set terms ,new-terms)))]
-		 [else 'bad-transmit]
+		 [else (dispnl 'bad-transmit)]
 		 ))
 	(define (reset)
 		(state-change 'terms '(0 0 0 0 0 0))
 		)
-	(define (self msg)
+	(define (self  msg)
 		(cond
 		 [(assoc msg state) (assoc msg state)]  ;;report state element
 		 [(eq? msg 'state) state]							 ;;report all state
@@ -117,7 +119,7 @@
 					(state-change o n)
 					))]
 		 [(eq? (car msg) 'init)]
-		 [else 'ill-msg]))
+		 [else (dispnl 'ill-msg)]))
 
 	self)
 
