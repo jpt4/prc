@@ -2,129 +2,124 @@
 ;;object oriented version of RLEM, id 3-453
 
 (define (rlem3453)
-	(letrec* ([id 0]
-						[role 'stem]            ;;stem gate wire
-						[mem 0]
-						[buf '()]               ;;stem cell msg buffer
-						[stin '(_ . _)]         ;;stem cell 0/1 terms
-						[terms '(0 0 0 0 0 0)]  ;;A B C A' B' C'
-						[nbrs '(0 0 0)]         ;;B/A' C/B' A/C'
-						[state `((id . ,id) (role . ,role) (mem . ,mem) (buf . ,buf) 
-										 (stin . ,stin) (terms . ,terms) (nbrs . ,nbrs))]
-						[state-change
-						 (lambda (cur new)
-							 (begin
-								 (case cur
-									 ['id (set! id new)]
-									 ['role (set! role new)]
-									 ['buf (set! buf new)]
-									 ['stin (set! stin new)]
-									 ['mem (set! mem new)]
-									 ['terms (set! terms new)]
-									 ['nbrs (set! nbrs new)]
-									 [else 'err])
-								 (set! state `((id . ,id) (role . ,role) (mem . ,mem)
-															 (buf . ,buf) (stin . ,stin) (terms . ,terms) 
-															 (nbrs . ,nbrs)))
-								 ))]
-						[act 
-						 (lambda ()
-							 (case role
-								['wire (begin (transfer) (transmit) (reset)
-															)]
-								['gate (begin (transfer) (transmit) (reset) (flip-mem)
-															)]
-								['stem (if (eq? (length buf) 8)
-													 (parse-buf)
-													 (let ([inp (list-ref terms 1)])
-														 (write-buf inp)
-														 ))]
-								[else `(,id . no-action)]
-								))]							
-						[parse-buf
-						 (lambda ()
-							 (let* ([dest (list-head buf 2)]
-											[inst (case (list-tail buf 2)
-															['(0 0 0) `(set terms ,(calc-term-inp 0))]
-															['(0 0 1) `(set terms ,(calc-term-inp 1))]
-															['(0 1 0
-						[write-buf
-						 (lambda (i)
-							 (cond
-								[(eq? (car stin) inp)
-								 (state-change 'buf (append buf '(0)))]  ;;inp=0
-								[(eq? (cdr stin) inp)
-								 (state-change 'buf (append buf '(1)))]  ;;inp=1
-								[(and (number? (car stin)) (eq? (cadr stin) '_))
-								 (begin
-									 (state-change 'stin (cons (car stin) inp))
-									 (state-change 'buf (append buf '(1)))
-									 )]
-								[(and (number? (cadr stin)) (eq? (car stin) '_))
-								 (begin
-									 (state-change 'stin (cons inp (cdr stin)))
-									 (state-change 'buf (append buf '(0)))
-									 )]
-								[(eq? stin '(_ . _))
-								 (begin
-									 (state-change 'stin (cons inp (cdr stin)))
-									 (state-change 'buf (append buf '(0)))
-									 )]
-								))]
-								)
-						[flip-mem
-						 (lambda ()
-							 (case mem
-								 ['0 (state-change 'mem 1)]
-								 ['1 (state-change 'mem 0)]
-								 [else 'bad-mem-flip]
-								 ))]
-						[transfer
-						 (lambda ()
-							 (cond
-								[(eq? '(0 0 0 0 0 0) terms) 'no-transfer]
-								[(eq? mem 0)  ;;turn right
-								 (state-change
-									'terms (append (list-tail terms 3)
-																 (list-head terms 3)))]  ;;ABC->A'B'C'
-								[(eq? mem 1)  ;;turn left
-								 (state-change
-									'terms (append '(0 0 0) (list 
-																					 (list-ref terms 2)       ;;C->A'
-																					 (list-ref terms 0)       ;;A->B'
-																					 (list-ref terms 1))))]   ;;B->C'
-								[else 'bad-transfer]
-								))]
-						[transmit 
-						 (lambda ()
-							 (cond
-								[(> (list-index terms 1) 2)
-								 (let* ([target (list-ref nbrs (- (list-index terms 1) 3))]
-												[new-terms (append (list (list-ref terms 5)
-																								 (list-ref terms 3)
-																								 (list-ref terms 4))
-																					 '(0 0 0))])
-									 (target `(set terms ,new-terms)))]
-								[else 'bad-transmit]
-								))]
-						[reset
-						 (lambda ()
-							 (state-change 'terms '(0 0 0 0 0 0))
-							 )]
-						)
-					 (lambda (msg)
-						 (cond
-							[(assoc msg state) (assoc msg state)]  ;;report state element
-							[(eq? msg 'state) state]							 ;;report all state
-							[(eq? msg 'step) (act)]
-							[(eq? (car msg) 'set)
-							 (let ([o (cadr msg)]
-										 [n (caddr msg)])
-								 (begin
-									 (state-change o n)
+	(define id 0)
+	(define role 'stem)            ;;stem gate wire
+	(define mem 0)
+	(define buf '())               ;;stem cell msg buffer
+	(define stin '(_ . _))         ;;stem cell 0/1 terms
+	(define terms '(0 0 0 0 0 0))  ;;A B C A' B' C'
+	(define nbrs '(0 0 0))         ;;B/A' C/B' A/C'
+	(define state `((id . ,id) (role . ,role) (mem . ,mem) (buf . ,buf) 
+										 (stin . ,stin) (terms . ,terms) (nbrs . ,nbrs)))
+	(define (state-change cur new)
+		(begin
+			(case cur
+				['id (set! id new)]
+				['role (set! role new)]
+				['buf (set! buf new)]
+				['stin (set! stin new)]
+				['mem (set! mem new)]
+				['terms (set! terms new)]
+				['nbrs (set! nbrs new)]
+				[else 'err])
+			(set! state `((id . ,id) (role . ,role) (mem . ,mem)
+										(buf . ,buf) (stin . ,stin) (terms . ,terms) 
+										(nbrs . ,nbrs)))
+			))
+	(define (act)
+		(case role
+			['wire (begin (transfer) (transmit) (reset)
+										)]
+			['gate (begin (transfer) (transmit) (reset) (flip-mem)
+										)]
+			['stem (if (eq? (length buf) 5)
+								 (parse-buf)
+								 (let ([inp (list-ref terms 1)])
+									 (write-buf inp)
 									 ))]
-							[(eq? (car msg) 'init) 
-							[else 'ill-msg]))))
+			[else `(,id . no-action)]
+			))							
+	(define (parse-buf)
+		(let* ([dest (case (list-head buf 2)
+									 ['(0 0) self]
+									 )]
+					 [inst (case (list-tail buf 2)
+									 ['(0 0 0) `(set terms ,(calc-term-inp 0))]
+									 ['(0 0 1) `(set terms ,(calc-term-inp 1))]
+									 ['(0 1 0) `ack])])
+			'app))
+	(define (write-buf i)
+		(cond
+		 [(eq? (car stin) inp)
+			(state-change 'buf (append buf '(0)))]  ;;inp=0
+		 [(eq? (cdr stin) inp)
+			(state-change 'buf (append buf '(1)))]  ;;inp=1
+		 [(and (number? (car stin)) (eq? (cadr stin) '_))
+			(begin
+				(state-change 'stin (cons (car stin) inp))
+				(state-change 'buf (append buf '(1)))
+				)]
+		 [(and (number? (cadr stin)) (eq? (car stin) '_))
+			(begin
+				(state-change 'stin (cons inp (cdr stin)))
+				(state-change 'buf (append buf '(0)))
+				)]
+		 [(eq? stin '(_ . _))
+			(begin
+				(state-change 'stin (cons inp (cdr stin)))
+				(state-change 'buf (append buf '(0)))
+				)]
+		 ))
+	(define (flip-mem)
+		(case mem
+			['0 (state-change 'mem 1)]
+			['1 (state-change 'mem 0)]
+			[else 'bad-mem-flip]
+			))
+	(define (transfer)
+		(cond
+		 [(eq? '(0 0 0 0 0 0) terms) 'no-transfer]
+		 [(eq? mem 0)  ;;turn right
+			(state-change
+			 'terms (append (list-tail terms 3)
+											(list-head terms 3)))]  ;;ABC->A'B'C'
+		 [(eq? mem 1)  ;;turn left
+			(state-change
+			 'terms (append '(0 0 0) (list 
+																(list-ref terms 2)       ;;C->A'
+																(list-ref terms 0)       ;;A->B'
+																(list-ref terms 1))))]   ;;B->C'
+		 [else 'bad-transfer]
+		 ))
+	(define (transmit)
+		(cond
+		 [(> (list-index terms 1) 2)
+			(let* ([target (list-ref nbrs (- (list-index terms 1) 3))]
+						 [new-terms (append (list (list-ref terms 5)
+																			(list-ref terms 3)
+																			(list-ref terms 4))
+																'(0 0 0))])
+				(target `(set terms ,new-terms)))]
+		 [else 'bad-transmit]
+		 ))
+	(define (reset)
+		(state-change 'terms '(0 0 0 0 0 0))
+		)
+	(define (self msg)
+		(cond
+		 [(assoc msg state) (assoc msg state)]  ;;report state element
+		 [(eq? msg 'state) state]							 ;;report all state
+		 [(eq? msg 'step) (act)]
+		 [(eq? (car msg) 'set)
+			(let ([o (cadr msg)]
+						[n (caddr msg)])
+				(begin
+					(state-change o n)
+					))]
+		 [(eq? (car msg) 'init)]
+		 [else 'ill-msg]))
+
+	self)
 
 (define r0 (rlem3453))
 (define r1 (rlem3453))
@@ -179,5 +174,6 @@
 
 (begin
 	(config)
-	(wire-test))
+;	(wire-test)
+	)
 
