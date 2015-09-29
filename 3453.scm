@@ -48,7 +48,8 @@
 								 (begin (circulate) (switch-mem)))]
 			['stem (case (cdr inp)
 							 ['-1 (begin (write-buffer) (parse-buffer))]
-							 ['0 (begin (direct-write-buffer-0) (parse-buffer))];parse conditional on buffer length check
+							 ['0 (begin (direct-write-buffer-0) (parse-buffer))]
+;parse conditional on buffer length check
 							 ;(self `(set buf ,(append buf '(0))))]
 							 ['1 (direct-write-buffer-1)]
 							 ;(self `(set buf ,(append buf '(1))))]
@@ -64,6 +65,33 @@
 			['show (show)]
 			['set (set)]
 			))			
+	(define (write-buffer)
+		(let ([ent (car inp)])
+									 (write-buf inp)
+									 (dispnl inp)
+									 )
+		(cond
+		 [(eq? (car stin) inp)
+			(state-change 'buf (append buf '(0)))]  ;;inp=0
+		 [(eq? (cdr stin) inp)
+			(state-change 'buf (append buf '(1)))]  ;;inp=1
+		 [(and (number? (car stin)) (eq? (cdr stin) '_))
+			(begin
+				(state-change 'stin (cons (car stin) inp))
+				(state-change 'buf (append buf '(1)))
+				)]
+		 [(and (number? (cdr stin)) (eq? (car stin) '_))
+			(begin
+				(state-change 'stin (cons inp (cdr stin)))
+				(state-change 'buf (append buf '(0)))
+				)]
+		 [(eq? stin '(_ . _))
+			(begin
+				(state-change 'stin (cons inp (cdr stin)))
+				(state-change 'buf (append buf '(0)))
+				)]
+		 [else (dispnl 'bad-buf-write)]
+		 ))
 	(define (set)
 		(let* ([field (cadr inp)]
 					 [value (caddr inp)])
