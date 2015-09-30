@@ -1,0 +1,16 @@
+(define r0 (rlem3453))
+(define r1 (rlem3453))
+(define r2 (rlem3453)) 
+(define r3 (rlem3453)) ;central
+
+(r0 `(set nbrs (,r3 _ _ ,r0)))
+(r1 `(set nbrs (_ ,r3 _ ,r1)))
+(r2 `(set nbrs (_ _ ,r3 ,r2)))
+(r3 `(set nbrs (,r0 ,r1 ,r2 ,r0)))
+
+(r3 '(0 . -1)) ;r0 is low
+(r3 '(1 . -1)) ;r1 is high buf = 1
+(r3 '(1 . -1)) ;11
+(r3 '(0 . -1)) ;110
+(r3 '(0 . -1)) ;1100
+(r3 '(0 . -1)) ;11000
