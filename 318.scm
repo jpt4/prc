@@ -1,5 +1,5 @@
-;;390.scm  jpt4  UTC20151002
-;;RLEM 3-90 is universal with two ports triggering a memory state change.
+;;318.scm  jpt4  UTC20151002
+;;RLEM 3-18 is universal with only one port triggering a memory state change.
 
 (define (rlem318)
 	(define id 'id)
@@ -41,8 +41,8 @@
 			['wire (if (eq? (cdr inp) 0) (become-stem) (circulate))]
 			['gate (if (eq? (cdr inp) 0) (become-stem) 
 								 (begin (circulate)
-												(if (not (or (and (eq? (car inp) 2) (eq? mem 'l))
-																		 (and (eq? (car inp) 0) (eq? mem 'r))))
+												(if (or (and (eq? (car inp) 2) (eq? mem 'l))
+																(and (eq? (car inp) 0) (eq? mem 'r)))
 														(switch-mem))))]
 			['stem (case (cdr inp)
 							 ['-1 (begin (write-buffer) (parse-buffer))]
