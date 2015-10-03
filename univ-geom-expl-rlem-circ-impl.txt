@@ -67,8 +67,9 @@ circuitry seems poised for extension from one-time, pre-computation
 circuit configuration, to dynamic component-wise reconfiguration in
 the style of the RALA architecture [3], but with potentially less
 per-cell machinery. Tesellation of the plane by 2-D triangular RLEMs
-can be extended to fill 3-D space via a truncated octohedron
-honeycomb [4].
+can be extended to fill 3-D space via a truncated octohedron honeycomb
+[4]; note that because every vertex intersects three edges, a 2-D
+planar mapping can be folded into 3-D space without special rerouting.
 
 [0] Morita, K. (2013) Reversible Logic Elements with Memory and Their
     Universality
