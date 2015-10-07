@@ -1,7 +1,7 @@
 Universal Geometrically Explicit RLEM Circuits, and Their Possible
 Implementation
 
-jpt4 UTC20150909 Rev. UTC20150915
+jpt4 UTC20150909 Rev. UTC20150915, UTC20151007
 
 This note demonstrates by construction the computational universality
 of geometrically explicit logic circuits (GELCs) composed of certain
@@ -36,9 +36,9 @@ interface between circuit elements is regularized by the lattice of
 triangular RLEM nodes; defining a circuit is a matter of labelling the
 nodes as certain RLEMs, and specifying their starting memory state
 (Right or Left). Hand synthesized GELCs of triangular RLEMs which
-simulate the rectagular RLEM simulation of RLEMs 2-3 and 2-4 are given
-in Fig. 4 - 6. This proves by reduction the universality of the three
-constructed GELCs.
+simulate the rectagular RLEM circuit equivalents of RLEMs 2-3 and 2-4
+are given in Fig. 4 - 6. This proves by reduction the universality of
+the three constructed GELCs.
 
 Ferrite junction circulators are passive circuit elements used to
 control the propagation of electromagnetic radiation [1]. Varieties
