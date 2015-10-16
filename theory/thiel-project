@@ -1,0 +1,78 @@
+processor -> 1-bit processor
+its [newline] memory state -> its memory state
+passive EMF -> passive electromagnetic radiation (EMR)
+similar to RLEMs. -> similar to RLEMs: they act as rotary waveguides
+with variable chirality, switched electrically, and persisted between
+switching magnetically.
+hybrid electronic/EMF -> hybrid electronic EMR
+past two years -> last two years
+EMF circulators -> EMR circulators
+general [newline] problem -> general problem
+little special knowledge -> little special training
+during the last two years came -> since the project's inception has come
+re-encapsulate the history -> re-encapsulate the logistics
+
+Thiel Fellowship Application Project Description 
+jpt4 
+UTC20151007
+
+Pervasively Reconfigurable Computing (PRC) collapses the dependency
+graph of computing to its root node.
+
+The primary goal of PRC is to build a general purpose computer with no
+further dependencies than the correct function of its primitive,
+homogeneous circuit elements, called "Universal Cells". In this
+respect, PRC is similar to MIT's Reconfigurable Asynchronous Logic
+Automata (RALA) project, though independent in origin and motivation.
+
+Every Universal Cell must support the following behavior:
+1. Reversible logic
+2. Asynchronous operation
+3. Explicit signal and power routing
+4. Organic reconfigurability
+
+The current proposed realization of a PRC machine theorizes a
+hexagonal lattice of Reversible Logic Elements with Memory. RLEMs are
+3-port, reversible, asynchronous circuit primitives with one bit of
+per-element memory. Arranging these in a hexagonal lattice requires
+any circuit built upon them to be geometrically explicit - the wiring
+between elements must be as equally formally specified as the sequence
+of logic operations. With minimal per element buffering (5-bit) and
+message passing (3-bit), each node can be re-programmed to act as a
+wire (routing), 1-bit processor (logic), or stem (reconfiguration)
+cell. Within the lattice, logical operations take the form of
+rotational redirections of incoming signals, depending on the current
+memory state of the cell. Redirection can flip the memory state,
+altering the redirection of subsequent signals. A cell can be probed
+to determine its memory state by observing along which output terminal
+an incoming signal exits. Within a lattice, RLEMs unify the treatment
+of logic, routing, and memory.
+
+A switchable, latching, ferrite junction circulator is a passive
+electromagnetic radiation (EMR) circuit element with behavior
+substantially similar to RLEMs; they act as rotary waveguides with
+variable chirality, switched electrically, and persisted between
+switching magnetically. Circulators equipped with auxiliary
+electronics to buffer and process reconfiguration messages would
+provide a hybrid electronic/EMR implementation of a lattice of
+Universal Cells.
+
+The PRC project has been the independent research of its author for
+approximately the last two years. In the past six months, the project
+has rapidly codified, with the establishment of a theoretical basis in
+RLEMs, and a physical analogue in EMR circulators. The main effort is
+currently dedicated to simulating a lattice of Universal Cells in
+software. The author is a generalist, interested in the general
+problem of artificial intelligence, and has little special training in
+digital circuit design. Accordingly, much of the progress since the
+project's inception has come only after learning sufficient in-field
+vocabulary to appropriately refine search terms. As a thoroughly
+revisionary project, it will be necessary to re-encapsulate the
+logistics of computing through the lens of pervasive
+reconfigurability: hardware synthesis and manufacture, programming
+languages, compilers, tooling, and programming practices will be
+augmented along the path to top level applications.
+
+The prospect, however, of a machine of one's own devising, and
+ultimately, its own devising, is as sufficient encouragement to
+persevere, as it was to begin.
