@@ -1,8 +1,12 @@
 # PRC - Pervasively Reconfigurable Computing
 
-Code, etc. for the project to align computers with their embodiment,
-bring awareness and tunability to their resource consumption, and
-provide a platform acceptable to me and a seed SAI.
+Code, prose, etc. for the project to align computers with their
+embodiment, bring awareness and tunability to their resource
+consumption, and produce a platform acceptable to me and a seed SAI.
+
+The directory "theory" is everything which does not execute (prose),
+"practice" everything that does (code). Meta-data and compliance
+documents (etc.) may not follow this schema.
 
 ## In Which an Argument is Made for the Hidden to Become Visible
 
