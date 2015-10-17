@@ -1,0 +1,48 @@
+Author's Note: I notice I tend to describe essentially the same
+aspects of PRC in multiple ways, as this early synopsis of the project
+attests. I seek to impress that this redundancy is not born of an
+attempt to overwhelm third parties with hyperlexia, and instead
+reflects my own efforts to articulate the nuances of the project, its
+motivations and objectives.
+
+The axiomatic trust upon which modern computers and their operators
+depend is the assumption that "the transistor will switch the
+signal". There are many other threads in the dependency graph,
+e.g. the memory won't auto-corrupt, the wi-fi won't silently phone
+home, the OS will fairly schedule tasks, but the bare minimum
+necessary for viability is a bedrock assurance in the transistor
+phenomenon. It is the object of Pervasively Reconfigurable Computing
+(PRC) to, in a non-eliminative reductionist sense, collapse the
+dependency graph to its root: the proper function of a Universal Cell
+within a computing lattice.
+
+The current graph origin already bears great responsibility. The
+transistor is rightly the king of computing hardware, because its
+bestrides the two domains of physics and symbolic logic. In isolating
+a particular non-linear electrical amplification effect, the behavior
+of the transistor can be interpreted as a operation of symbolic
+Boolean logic. The transistor is capable of serving as the basic
+element in computing circuits because aspects of its physical
+existence correspond with basic elements of symbolic logic. This
+correspondence is component-wise universal: a single transistor can
+embody a single NOR gate [0].
+
+PRC extends the functionality of the atomic computing circuit element:
+the Universal Cell (UC) supports reversible, asynchronous,
+geometrically explicit reconfigurable computing. A UC is at its core
+the logico-physical transjunct for a Reversible Logic Element with
+Memory [1], instantiable via a single latching, switchable EMF
+circulator [2]. Auxiliary circuitry, in the style of RALA [3],
+collate, buffer, and process reconfiguration messages passed to and
+from UCs in the "stem cell" state.
+
+[0] http://hyperphysics.phy-astr.gsu.edu/hbase/electronic/trangate.html#c5
+
+[1] Morita, K. (2013) Reversible Logic Elements with Memory and Their
+    Universality
+
+[2] Siekanowicz, W., and Schilling, W. (1968) A New Type of Latching
+    Switchable Ferrite Junction Circulator
+
+[3] Gershenfeld et al. (2011) Reconfigurable Asynchronous Logic
+    Automata

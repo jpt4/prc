@@ -39,10 +39,44 @@ technologically feasible, pervasively reconfigurable computing device,
 programmatically exposed from the lowest semantic level upwards.
 
 [0] Absent 1. Indistinguishability Obfuscation/Fully Homomorphic
-Encryption and/or 
-2. Physically Unclonable Functions.
+Encryption and/or 2. Physically Unclonable Functions.
 
 ###Logos (or, Technical Contributions):
+
+The overall Boolean function performed by a network of transistors may
+be deduced by composing the formal descriptions of individual
+transistors. How transistors are physically composed requires the
+auxiliary reasoning of a routing algorithm, because the wiring of the
+input network wiring between processing elements is a matter apart
+from the processing elements themselves.
+
+The hardware of a PRC system is a component-wise, organically
+reconfigurable lattice whose nodes are Universal Cells (UCs),
+connected to form Geometrically Explicit Logic Circuits (GELCs). A
+single transistor can be specified such that it embodies a Boolean NOR
+logic gate, satisfying abstract logical universality. However,
+composing sequences of transistors requires the auxiliary
+formalization of power, logic, and (circumstantially) clock signal
+routing between processing elements.
+
+In constrast, a GELC is deductively and entirely defined by its
+formal specification of its component UCs. As the semantic bedrock of PRC, a UC supports:
+
+1. Reversible logic
+2. Asynchronous operation
+3. Explicit signal and power routing
+4. Organic, component-wise reconfigurability
+
+By "component-wise", reconfigurability is an atomic operation; a UC
+must be the least viable semntic element, such that if it were
+decomposed further it would not retain the complete set of properties
+guaranteed above. The process of identifying a suitable physical
+incarnation of a UC is the search for the least phenomena which most
+exactly capture the above desired capabilities. At present, a
+reconfigurable extension of Reversible Elements with Memory (RLEMs)
+can be put in close correspondence with the behavior of a switchable,
+latching electromagnetic radiation (EMR) circulator, while conforming
+to the above criteria.
 
 practice/{3453.scm, 318.scm, and 390.scm} implement Universal Cells
 (UC) which expose the logical operation of RLEMs 3-453/18/90,
@@ -54,6 +88,13 @@ diagrams describing the relation between RLEMs and GELCs in greater
 RLEM-based Universal Cells.
 
 ###Ethos (or, Prior Work):
+
+While genetically independent, PRC shares much of its current ideology
+and abstract model with MIT's Reconfigurable Asynchronous Logic
+Automata (RALA) project [0]. Kenichi Morita and his collaborators
+developed Reversible Logic Elements with Memory in several papers over
+the last 20 years [1]. Switching, latching EMR circulators have been
+studied by radio engineers since the mid-20th century [2].
 
 theory/history.txt: An oral history of influences during the project's
 gestation.
@@ -70,6 +111,3 @@ theory/literature: Collated relevant existing research.
 
 [2] Siekanowicz, W., and Schilling, W. (1968) A New Type of Latching
     Switchable Ferrite Junction Circulator
-
-
-
