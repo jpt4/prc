@@ -5,7 +5,7 @@ embodiment, bring awareness and tunability to their resource
 consumption, and produce a platform acceptable to me and a seed SAI.
 
 The directory *theory* is everything which does not execute (prose),
-*practice* everything that does (code). Meta-data and compliance
+nn*practice* everything that does (code). Meta-data and compliance
 documents (etc.) may not follow this schema.
 
 Developed against GNU Guile.
@@ -38,8 +38,9 @@ ownership of the means of general purpose computation, without a
 technologically feasible, pervasively reconfigurable computing device,
 programmatically exposed from the lowest semantic level upwards.
 
-[0] Absent 1) Indistinguishability Obfuscation/Fully Homomorphic
-Encryption and/or 2) Physically Unclonable Functions.
+[0] Absent 1. Indistinguishability Obfuscation/Fully Homomorphic
+Encryption and/or 
+2. Physically Unclonable Functions.
 
 ###Logos (or, Technical Contributions):
 
