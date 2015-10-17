@@ -4,13 +4,17 @@ Code, prose, etc. for the project to align computers with their
 embodiment, bring awareness and tunability to their resource
 consumption, and produce a platform acceptable to me and a seed SAI.
 
-The directory "theory" is everything which does not execute (prose),
-"practice" everything that does (code). Meta-data and compliance
+The directory *theory* is everything which does not execute (prose),
+*practice* everything that does (code). Meta-data and compliance
 documents (etc.) may not follow this schema.
+
+Developed against GNU Guile.
+
+Released under the MIT License.
 
 ## In Which an Argument is Made for the Hidden to Become Visible
 
-Pathos (or, Propaganda and Rationale):
+###Pathos (or, Propaganda and Rationale):
 
 Semantically, the technology stack of a modern computer grounds its
 validity in the non-linear amplification effect of the transistor
@@ -35,31 +39,27 @@ technologically feasible, pervasively reconfigurable computing device,
 programmatically exposed from the lowest semantic level upwards.
 
 [0] Absent 1) Indistinguishability Obfuscation/Fully Homomorphic
-Encryption and 2) Physically Unclonable Functions.
+Encryption and/or 2) Physically Unclonable Functions.
 
-Logos (or, Technical Contributions):
+###Logos (or, Technical Contributions):
 
 practice/{3453.scm, 318.scm, and 390.scm} implement Universal Cells
 (UC) which expose the logical operation of RLEMs 3-453/18/90,
 respectively.
 
-theory/gelc-universalityuniv.txt is a note, and figures.pdf a set of
-figures, describing the relation between RLEMs and GELCs in greater
-(though yet terse) detail, and proving by construction the
-universality of RLEM-based Universal Cells.
+theory/{gelc-universality.txt, figures.pdf} are a note and associated
+diagrams describing the relation between RLEMs and GELCs in greater
+(though yet terse) detail, proving by construction the universality of
+RLEM-based Universal Cells.
 
-Developed against GNU Guile.
-
-Released under the MIT License.
-
-Ethos (or, Prior Work):
+###Ethos (or, Prior Work):
 
 theory/history.txt: An oral history of influences during the project's
 gestation.
 
 theory/literature: Collated relevant existing research.
 
-References in Brief:
+####Key References in Brief:
 
 [0] Gershenfeld et al. (2011) Reconfigurable Asynchronous Logic
     Automata
