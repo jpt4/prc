@@ -33,18 +33,38 @@ programmatically exposed from the lowest semantic level upwards.
 [0] Absent 1) Indistinguishability Obfuscation/Fully Homomorphic
 Encryption and 2) Physically Unclonable Functions.
 
-Logos (or, Personal Contributions):
+Logos (or, Technical Contributions):
 
-3453.scm, 318.scm, and 390.scm implement Universal Cells (UC) which
-expose the logical operation of RLEMs 3-453/18/90, respectively.
+practice/{3453.scm, 318.scm, and 390.scm} implement Universal Cells
+(UC) which expose the logical operation of RLEMs 3-453/18/90,
+respectively.
 
-univ-[etc].txt is a note, and hexagon.odg a set of figures, describing
-the relation between RLEMs and GELCs in greater (though yet terse)
-detail.
+theory/gelc-universalityuniv.txt is a note, and figures.pdf a set of
+figures, describing the relation between RLEMs and GELCs in greater
+(though yet terse) detail, and proving by construction the
+universality of RLEM-based Universal Cells.
 
 Developed against GNU Guile.
 
 Released under the MIT License.
 
 Ethos (or, Prior Work):
+
+theory/history.txt: An oral history of influences during the project's
+gestation.
+
+theory/literature: Collated relevant existing research.
+
+References in Brief:
+
+[0] Gershenfeld et al. (2011) Reconfigurable Asynchronous Logic
+    Automata
+
+[1] Morita, K. (2013)  Reversible Logic Elements with Memory and Their
+    Universality
+
+[2] Siekanowicz, W., and Schilling, W. (1968) A New Type of Latching
+    Switchable Ferrite Junction Circulator
+
+
 
