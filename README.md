@@ -5,7 +5,7 @@ embodiment, bring awareness and tunability to their resource
 consumption, and produce a platform acceptable to me and a seed SAI.
 
 The directory *theory* is everything which does not execute (prose),
-nn*practice* everything that does (code). Meta-data and compliance
+*practice* everything that does (code). Meta-data and compliance
 documents (etc.) may not follow this schema.
 
 Developed against GNU Guile.
@@ -68,7 +68,7 @@ formal specification of its component UCs. As the semantic bedrock of PRC, a UC 
 4. Organic, component-wise reconfigurability
 
 By "component-wise", reconfigurability is an atomic operation; a UC
-must be the least viable semntic element, such that if it were
+must be the least viable semantic element, such that if it were
 decomposed further it would not retain the complete set of properties
 guaranteed above. The process of identifying a suitable physical
 incarnation of a UC is the search for the least phenomena which most
@@ -84,17 +84,18 @@ respectively.
 
 theory/{gelc-universality.txt, figures.pdf} are a note and associated
 diagrams describing the relation between RLEMs and GELCs in greater
-(though yet terse) detail, proving by construction the universality of
+detail, including a proof by construction of the universality of
 RLEM-based Universal Cells.
 
 ###Ethos (or, Prior Work):
 
-While genetically independent, PRC shares much of its current ideology
-and abstract model with MIT's Reconfigurable Asynchronous Logic
-Automata (RALA) project [0]. Kenichi Morita and his collaborators
-developed Reversible Logic Elements with Memory in several papers over
-the last 20 years [1]. Switching, latching EMR circulators have been
-studied by radio engineers since the mid-20th century [2].
+While provenancially independent, PRC shares much of its current
+ideology and abstract model with MIT's Reconfigurable Asynchronous
+Logic Automata (RALA) project [0]. Kenichi Morita and his
+collaborators developed Reversible Logic Elements with Memory in
+several papers over the last 20 years [1]. Switching, latching EMR
+circulators have been studied by radio engineers since the mid-20th
+century [2].
 
 theory/history.txt: An oral history of influences during the project's
 gestation.
