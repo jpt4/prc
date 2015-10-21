@@ -12,18 +12,43 @@ from sending signals. This implies an ordering to events that
 corresponds with spatial proximity: signals reach an element, are
 processed, and new ones repropagated. In this way, all effects are
 local, and can be determined by following a contiguous trace of prior
-causes where each succesive step identifies a composition of functions
+causes where each successive step identifies a logical transformation
 with a transition in space.
 
-*[Subject to review for accuracy]*
+In analog reality, voltage level encoded logic values do not exist
+independently as point values at the entrance and exit terminals of
+circuit elements, and are instead samples of relative potential
+between the endpoints of source and ground. Because the endpoints and
+the path between them are not guaranteed to be local, a naive
+formalization of an analog circuit which attempts to model each
+circuit element as a function over its local terminal voltage levels
+may be required to break from that approach in some way. When
+modelling the single transistor NOR gate (Fig. 1), two possible
+deviations from the local, functional method produced an accurate
+model:
 
-*Electronic circuits are not particle propagation systems. Although
-current is thought of as flowing from source to sink, if a path
-doesn't exist, neither does the capacity for work; voltage-encoded
-logical HIGH and LOW signal do not test their paths to see if they are
-complete. Thus, because a factor at the spatial end of an electrical
-circuit (the presence of a sink) effects its beginning (the coursing
-of current from source), their exists a non-local effect in analogue
-electric circuits compared to the digital logic they support. This
-affects the functional formalization of the single transistor RTL NOR
-gate, as follows.*
+1. All elements behave as functions, but allow non-local function
+inputs (Derivation 1).
+
+2. All inputs are local, but allow relational (bi-directional) element
+behavior (Derivation 2).
+
+                       
+                         D
+                         o V+
+                         |
+                        <R4>
+                         |   Q
+    A--<R1>--+        W2 +---o out 
+             |           |     
+             |         |/    
+    B--<R2>--+---+-----| T1
+             W1  |     |>
+                <R3>     |       
+                 |       |
+								=== V-  ===
+                 C       E
+                
+    Figure 1. Single bipolar junction transistor NOR gate using
+    resistor-transistor logic.
+                 
