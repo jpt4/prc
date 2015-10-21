@@ -15,7 +15,9 @@ local, and can be determined by following a contiguous trace of prior
 causes where each succesive step identifies a composition of functions
 with a transition in space.
 
-Electronic circuits are not particle propagation systems. Although
+*[Subject to review for accuracy]*
+
+*Electronic circuits are not particle propagation systems. Although
 current is thought of as flowing from source to sink, if a path
 doesn't exist, neither does the capacity for work; voltage-encoded
 logical HIGH and LOW signal do not test their paths to see if they are
@@ -24,4 +26,4 @@ circuit (the presence of a sink) effects its beginning (the coursing
 of current from source), their exists a non-local effect in analogue
 electric circuits compared to the digital logic they support. This
 affects the functional formalization of the single transistor RTL NOR
-gate, as follows.
+gate, as follows.*
