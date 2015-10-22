@@ -34,21 +34,33 @@ inputs (Derivation 1).
 behavior (Derivation 2).
 
                        
-                         D
-                         o V+
-                         |
-                        <R4>
-                         |   Q
-    A--<R1>--+        W2 +---o out 
-             |           |     
-             |         |/    
-    B--<R2>--+---+-----| T1
-             W1  |     |>
-                <R3>     |       
-                 |       |
-								=== V-  ===
-                 C       E
-                
-    Figure 1. Single bipolar junction transistor NOR gate using
-    resistor-transistor logic.
+                           F          Legend:      
+                          === V+            ----  := wire
+                           |                |     := wire                
+                          <R4>              +     := wire junction
+                           |   E            o     := connection to 
+    A o--<R1>--+        W2 +---o out                 larger circuit
+               |           |                ===   := power rail                 
+               |         |/                 <R1>  := resistor
+    B o--<R2>--+---+-----| T1               T1    := BPJ transistor
+               W1  |     |>                 W2    := wire junction
+                  <R3>     |                         function
+                   |       |                A-F   := input/output
+                  === V-  === ground                 labels
+                   C       D
+                        
+                        c                   c,b,e := collector,
+                        |                            base, emitter
+                      |/                             terminals
+                   b--| T1
+                      |>
+                        |
+                        e
+
+    Figure 1. Schematic of the single bipolar junction transistor NOR
+    gate using resistor-transistor logic.
                  
+Derivation 1: 
+
+Every element is modelled as a function with local inputs and outputs,
+except F=NOT(D), E=W2(F)=F, c=W2(F)=F.
