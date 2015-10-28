@@ -27,6 +27,15 @@
 
 ;;DEL = Q x SIG -> Q x GAM
 (define (rlem3453 mem sym)
+	(rlem3453-aux mem sym))
+
+(define (rlem3453-aux mem sym)
+	(rlem3453-direct mem sym))
+
+(define (rlem3453-direct mem sym)
+	(cons (abs (- mem 1)) (list (modulo (+ sym mem 4) 6))))
+
+(define (rlem3453-switch mem sym)
 	(cond
 	 [(eq? mem 0) (cons 1 (cons (case sym
 																['0 4]
@@ -40,5 +49,17 @@
 															'()))]
 	 ))
 
-(define (lattice-node) 'ln)
+(define (rlem33 mem sym)
+	(cons mem (list (modulo (+ sym mem 4) 6))))
+
+#|
+(define (exhaust-rlem r)
+	(let loop ([m 0])
+		(let loop ([s 0])
+			(if (<= s 2)
+					(display
+|#						 
+	
+(define (universal-3453-circuit) 'u)
+	
 					
