@@ -30,7 +30,9 @@
 	(rlem3453-aux mem sym))
 
 (define (rlem3453-aux mem sym)
-	(rlem3453-direct mem sym))
+	;(rlem3453-direct mem sym)
+	(rlem3453-switch mem sym)
+	)
 
 (define (rlem3453-direct mem sym)
 	(cons (abs (- mem 1)) (list (modulo (+ sym mem 4) 6))))
@@ -52,14 +54,25 @@
 (define (rlem33 mem sym)
 	(cons mem (list (modulo (+ sym mem 4) 6))))
 
-#|
 (define (exhaust-rlem r)
-	(let loop ([m 0])
-		(let loop ([s 0])
-			(if (<= s 2)
-					(display
-|#						 
-	
+	(let loop ([m 0]
+						 [s 0])
+		(cond
+		 [(and (<= m 1) (<= s 2))
+			(begin (display (list `(,m ,s) (r m s)))
+						 (newline)
+						 (loop (+ m 0) (+ s 1)))]
+		 [(and (< m 1) (> s 2))
+			(loop (+ m 1) (- s s))])))
+
 (define (universal-3453-circuit) 'u)
 	
 					
+(define divisors
+	(lambda (n)
+		(let f ((i 2))
+			(cond
+			 [(>= i n) '()]
+			 [(integer? (/ n i))
+				(begin (display i) (newline)) (f (+ i 1))]
+			 [else (f (+ i 1))]))))
