@@ -30,12 +30,29 @@
 	(rlem3453-aux mem sym))
 
 (define (rlem3453-aux mem sym)
-	;(rlem3453-direct mem sym)
-	(rlem3453-switch mem sym)
+	(rlem3453-direct mem sym)
+	;(rlem3453-switch mem sym)
 	)
 
 (define (rlem3453-direct mem sym)
-	(cons (abs (- mem 1)) (list (modulo (+ sym mem 4) 6))))
+	(let* ([val (modulo (+ mem sym) 3)]
+				 [new-sym (modulo (+ (* (sqrt (expt val val)) 4) val) 7)])
+		(list (mem-invert mem) new-sym)))
+
+(define (mem-invert m)
+	(abs (- m 1)))
+
+(define (sym-rotate m s)
+	(case m
+	 ['0 (case s ;rotate right
+				 ['0 4]
+				 ['1 5]
+				 ['2 3])]
+	 ['1 (case s ;rotate left
+				 ['0 5]
+				 ['1 3]
+				 ['2 4])]))
+			 
 
 (define (rlem3453-switch mem sym)
 	(cond
@@ -48,11 +65,28 @@
 																['0 5]
 																['1 3]
 																['2 4])
-															'()))]
-	 ))
+															'()))]))
+
+(define (rlem3453-buf mem sym rol buf)
+	(case rol
+		['stm ]
+		['wir (cond
+					 [(eq? sym 'stem-init) (list mem '_ 'stm '())]
+					 [(case mem
+						 ['0 (list mem (rotate-sym mem sym) rol buf)]
+						 ['1 (list mem (rotate-sym mem sym) rol buf)]
+						)])]
+								 
+		['log (case mem
+						['0 (list (mem-invert mem) (rotate-sym mem sym) rol buf)]
+						['1 (list (mem-invert mem) (rotate-sym mem sym) rol buf)]
+						)]
+		))
 
 (define (rlem33 mem sym)
-	(cons mem (list (modulo (+ sym mem 4) 6))))
+	(let* ([val (modulo (+ mem sym) 3)]
+				 [new-sym (modulo (+ (* (sqrt (expt val val)) 4) val) 7)])
+		(list mem new-sym)))
 
 (define (exhaust-rlem r)
 	(let loop ([m 0]
@@ -66,8 +100,7 @@
 			(loop (+ m 1) (- s s))])))
 
 (define (universal-3453-circuit) 'u)
-	
-					
+						
 (define divisors
 	(lambda (n)
 		(let f ((i 2))
