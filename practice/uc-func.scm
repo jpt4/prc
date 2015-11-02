@@ -26,16 +26,18 @@
 |#
 
 ;;DEL = Q x SIG -> Q x GAM
-(define (rlem3453 mem sym)
-	(rlem3453-aux mem sym))
 
-(define (rlem3453-aux mem sym)
-	(rlem3453-direct mem sym)
-	;(rlem3453-switch mem sym)
+(define (rlem3453-base input)
+	(rlem3453-base-aux input))
+
+(define (rlem3453-base-aux input)
+	(rlem3453-base-direct input)
+	;(rlem3453-base-switch input)
 	)
 
-(define (rlem3453-direct mem sym)
-	(let* ([val (modulo (+ mem sym) 3)]
+(define (rlem3453-base-direct input)
+	(let* ([mem (car input)] [sym (cadr input)]
+				 [val (modulo (+ mem sym) 3)]
 				 [new-sym (modulo (+ (* (sqrt (expt val val)) 4) val) 7)])
 		(list (mem-invert mem) new-sym)))
 
@@ -52,43 +54,51 @@
 				 ['0 5]
 				 ['1 3]
 				 ['2 4])]))
-			 
 
-(define (rlem3453-switch mem sym)
-	(cond
-	 [(eq? mem 0) (cons 1 (cons (case sym
-																['0 4]
-																['1 5]
-																['2 3])
-															'()))]
-	 [(eq? mem 1) (cons 0 (cons (case sym
-																['0 5]
-																['1 3]
-																['2 4])
-															'()))]))
+(define (rlem3453-base-switch input)
+	(let* ([mem (car input)] [sym (cadr input)])
+		(cond
+		 [(eq? mem 0) (cons 1 (cons (case sym
+																	['0 4]
+																	['1 5]
+																	['2 3])
+																'()))]
+		 [(eq? mem 1) (cons 0 (cons (case sym
+																	['0 5]
+																	['1 3]
+																	['2 4])
+																'()))])))
 
-(define (rlem3453-buf mem sym rol buf)
-	(case rol
-		['stm ]
-		['wir (cond
-					 [(eq? sym 'stem-init) (list mem '_ 'stm '())]
-					 [(case mem
-						 ['0 (list mem (rotate-sym mem sym) rol buf)]
-						 ['1 (list mem (rotate-sym mem sym) rol buf)]
-						)])]
-								 
-		['log (case mem
-						['0 (list (mem-invert mem) (rotate-sym mem sym) rol buf)]
-						['1 (list (mem-invert mem) (rotate-sym mem sym) rol buf)]
-						)]
-		))
+(define null-sym '_)
 
-(define (rlem33 mem sym)
-	(let* ([val (modulo (+ mem sym) 3)]
+;;STATE = MEMORY x ROLE x BUFFER x HIGH-RAIL x LOW-RAIL
+;;DELTA = STATE x SIGMA -> STATE x GAMMA
+(define (rlem3453-buf input)
+	(let* ([mem (car input)] [sym (cadr input)] [rol (caddr input)]
+				 [buf (cadddr input)] [hig (list-ref input 4)] [low (list-ref input 5)])
+		(case rol
+			['stm (cond
+						 [(or (eq? sym hig) (eq? sym low) (member? sym stem-commands))
+									(buf-parse mem sym rol (buf-modify sym buf hig low) hig low)]
+						 [(list mem '_ rol buf (hig-update sym hig) (low-update sym low))]
+						 )]
+			['wir (cond
+						 [(eq? sym 'stem-init) (list mem '_ 'stm '() hig low)]
+						 [(list mem (sym-rotate mem sym) rol buf hig low)]
+						 )]
+			['log (cond
+						 [(eq? sym 'stem-init) (list mem '_ 'stm '() hig low)]
+						 [(list (mem-invert mem) (sym-rotate mem sym) rol buf hig low)]
+						 )]
+			)))
+
+(define (rlem33 input)
+	(let* ([mem (car input)] [sym (cadr input)]
+				 [val (modulo (+ mem sym) 3)]
 				 [new-sym (modulo (+ (* (sqrt (expt val val)) 4) val) 7)])
 		(list mem new-sym)))
 
-(define (exhaust-rlem r)
+(define (exhaust-direct-rlem r)
 	(let loop ([m 0]
 						 [s 0])
 		(cond
@@ -100,7 +110,10 @@
 			(loop (+ m 1) (- s s))])))
 
 (define (universal-3453-circuit) 'u)
-						
+
+(define (cross-product ll)
+	
+
 (define divisors
 	(lambda (n)
 		(let f ((i 2))
