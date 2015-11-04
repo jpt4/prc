@@ -71,28 +71,36 @@
 
 (define null-sym '_)
 
+(define stem-commands (list 'zero 'one 'to-log 'to-wir))
+
 ;;STATE = MEMORY x ROLE x BUFFER x HIGH-RAIL x LOW-RAIL
 ;;DELTA = STATE x SIGMA -> STATE x GAMMA
 (define (rlem3453-buf input)
 	(let* ([mem (car input)] [sym (cadr input)] [rol (caddr input)]
-				 [buf (cadddr input)] [hig (list-ref input 4)] [low (list-ref input 5)])
+				 [buf (cadddr input)] [sig '((list-ref input 4) (list-ref input 5))]
+				 )
 		(case rol
 			['stm (cond
-						 [(or (eq? sym hig) (eq? sym low) (member? sym stem-commands))
-									(buf-parse mem sym rol (buf-modify sym buf hig low) hig low)]
-						 [(list mem '_ rol buf (hig-update sym hig) (low-update sym low))]
+						 [(or (member? sym sig) (member? sym stem-commands))
+									(buf-parse mem sym rol (buf-modify sym buf sig) sig)]
+						 [(list mem '_ rol buf (sig-update sym sig))]
 						 )]
 			['wir (cond
-						 [(eq? sym 'stem-init) (list mem '_ 'stm '() hig low)]
-						 [(list mem (sym-rotate mem sym) rol buf hig low)]
+						 [(eq? sym 'stem-init) (list mem null-sym 'stm '() sig)]
+						 [(list mem (sym-rotate mem sym) rol buf sig)]
 						 )]
 			['log (cond
-						 [(eq? sym 'stem-init) (list mem '_ 'stm '() hig low)]
-						 [(list (mem-invert mem) (sym-rotate mem sym) rol buf hig low)]
+						 [(eq? sym 'stem-init) (list mem null-sym 'stm '() sig)]
+						 [(list (mem-invert mem) (sym-rotate mem sym) rol buf sig)]
 						 )]
 			)))
 
-(define (rlem33 input)
+(define (sig-update sym sig)
+	(cond
+	 [(eq? '_ (car sig)) (list sym (cadr sig))] ;(_ _) or (_ <number>)
+	 [(eq? '_ (cdr sig)	(list (car sig) sym)])))
+
+(define (rlem33-direct input)
 	(let* ([mem (car input)] [sym (cadr input)]
 				 [val (modulo (+ mem sym) 3)]
 				 [new-sym (modulo (+ (* (sqrt (expt val val)) 4) val) 7)])
