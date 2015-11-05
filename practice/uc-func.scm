@@ -69,16 +69,15 @@
 																	['2 4])
 																'()))])))
 
+(define max-buf 5)
 (define null-sym '_)
-
 (define stem-commands (list 'zero 'one 'to-log 'to-wir))
 
 ;;STATE = MEMORY x ROLE x BUFFER x HIGH-RAIL x LOW-RAIL
 ;;DELTA = STATE x SIGMA -> STATE x GAMMA
 (define (rlem3453-buf input)
 	(let* ([mem (car input)] [sym (cadr input)] [rol (caddr input)]
-				 [buf (cadddr input)] [sig '((list-ref input 4) (list-ref input 5))]
-				 )
+				 [buf (cadddr input)] [sig '(list-ref input 4)])
 		(case rol
 			['stm (cond
 						 [(or (member? sym sig) (member? sym stem-commands))
@@ -95,10 +94,27 @@
 						 )]
 			)))
 
+;;update buffer according to incoming signal rail
+(define (buf-modify sym buf sig)
+	(if (< (length buf) (max-buf))
+			(cons (list-index sig sym) buf)) ;prepend low/high (0/1) to buffer
+	buf)
+
+;;send message to target, according to buffer value
+(define (buf-parse mem sym rol buf sig)
+	(let* ([tar (list-head buf 2)] [msg (list-tail buf 2)])
+		(case tar
+			['(0 0) ['(0 0 0 0 0) (list mem 
+
+;;update which entry terminals are high and low signal rails
+;;sig = (low high)
 (define (sig-update sym sig)
 	(cond
 	 [(eq? '_ (car sig)) (list sym (cadr sig))] ;(_ _) or (_ <number>)
-	 [(eq? '_ (cdr sig)	(list (car sig) sym)])))
+	 [(eq? '_ (cdr sig)	(list (car sig) sym)]) ;(<number> _)
+	 [else sig])) ;(<number> <number> - defensive, no-op, only reached if 
+                ;non-stem-command sym enters on third rail after both signal
+                ;rails are allocated.
 
 (define (rlem33-direct input)
 	(let* ([mem (car input)] [sym (cadr input)]
