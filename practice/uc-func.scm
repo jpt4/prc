@@ -102,9 +102,12 @@
 
 ;;send message to target, according to buffer value
 (define (buf-parse mem sym rol buf sig)
-	(let* ([tar (list-head buf 2)] [msg (list-tail buf 2)])
+	(let* ([tar (list-head buf 2)] [msg (list-tail buf 2)]
+				 [act (case msg
+								['(0 0 0) '(mem zero  ])
+							])
 		(case tar
-			['(0 0) ['(0 0 0 0 0) (list mem 
+			['(0 0) 
 
 ;;update which entry terminals are high and low signal rails
 ;;sig = (low high)
@@ -136,6 +139,9 @@
 (define (universal-3453-circuit) 'u)
 
 (define (cross-product ll)
+
+(define circuit ;;the role emitted by a cell is not the role which affects the
+               	;;behavior of its neighbors
 	
 
 (define divisors
