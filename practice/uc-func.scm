@@ -63,6 +63,10 @@
 
 ;;STATE = MEMORY x ROLE x BUFFER x HIGH-RAIL x LOW-RAIL
 ;;DELTA = STATE x SIGMA -> STATE x GAMMA
+;;SIGMA = {1 2 3 stem-init stem-commands} Basic input on main
+;;terminals, become stem, stem specific symbols
+;;GAMMA = {4 5 6 [0-3].stem-init [0-3].stem-commands} SIGMA symbols
+;;annotated with target meta-data
 (define (rlem3453-buf input)
 	(let* ([mem (car input)] [sym (cadr input)] [rol (caddr input)]
 				 [buf (cadddr input)] [sig '(list-ref input 4)])
@@ -108,6 +112,9 @@
 	 [else sig])) ;(<number> <number> - defensive, no-op, only reached if 
                 ;non-stem-command sym enters on third rail after both signal
                 ;rails are allocated.
+
+;;translate symbols from GAMMA to SIGMA, specialized by port (A, B, or C)
+(define (edge port out in)
 
 (define (rlem33-direct input)
 	(let* ([mem (car input)] [sym (cadr input)]
