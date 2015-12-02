@@ -8,8 +8,8 @@
 ;uclattice records trace of state evolution
 ;
 ;ucl
-;
-;state-at-t := ((time index uc) ...)
+;state-trace := ((tick (index (uc-state)) ...) ...)
+;state-at-t := (tick (index (uc-state)))
 ;
 
 (define (ucl3453 size)
@@ -19,6 +19,8 @@
 		'(sym mem rol buf sig nbr))
 	(define current-tick
 		(caar state-trace))
+	(define (add-uc uls) ;uls:=((uc-state)) ...)
+		(let* ([max-index ((self '(current-state))
 	(define (set-ucl-state dat)
 		(set! state-trace (cons (cons (+ 1 current-tick) dat) state-trace)))
 ;	(define (set-uc-state mod) ;mod:=((index ($FIELD $VALUE) ...) ...)
