@@ -20,7 +20,7 @@
 	(define current-tick
 		(caar state-trace))
 	(define (set-total-state dat)
-		(set! state-trace (append (list (+ 1 (current-tick)) dat) state-trace)))
+		(set! state-trace (cons (cons (+ 1 current-tick) dat) state-trace)))
 	(define (self msg)
 		(case (car msg)
 			['state-trace state-trace]
@@ -32,12 +32,15 @@
 
 (define ucl0 (ucl3453 1))
 (define (tests)
-	(display (ucl0 '(state-trace)))
-	(display (ucl0 '(current-state)))
-	(display (ucl0 '(diag-current-tick)))
-	(display (ucl0 '(state-at 0)))
-	(ucl0 '(set-total-state (0 _ r (_ _ _ _ _) (_ _) (_ _ _))))
-	(display (ucl '(state-trace))))
+	(display (ucl0 '(state-trace)))	(newline)
+	(display (ucl0 '(current-state)))	(newline)
+	(display (ucl0 '(diag-current-tick)))	(newline)
+	(display (ucl0 '(state-at 0))) (newline)
+	(ucl0 '(set-total-state (0 (_ r (_ _ _ _ _) (_ _) (_ _ _)))))
+	(display (ucl0 '(state-trace)))	(newline)
+	(display (ucl0 '(current-state)))	(newline)
+	(display (ucl0 '(state-at 1))) (newline)
+)
 	
 	
 
