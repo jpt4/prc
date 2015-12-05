@@ -17,7 +17,7 @@
 
 (define (rotate ls num)
 	(let* ([snum (modulo num (length ls))] ;sanitized shift value
-				 [new-head (list-tail ls snum)]
-				 [new-tail (list-head ls snum)])
+				 [new-head (list-tail ls (- (length ls) snum))]
+				 [new-tail (list-head ls (- (length ls) snum))])
 		(append new-head new-tail)))
 		
