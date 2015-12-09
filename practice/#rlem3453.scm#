@@ -69,7 +69,6 @@
 (define (c-edge tri)
 	(caddr (cadr tri)))
 
-
 (define (alist-less a b) 
 				(let* ([als (cons (cons (car a) a) 
 													(cons (cons (car b) b) '()))]) 
