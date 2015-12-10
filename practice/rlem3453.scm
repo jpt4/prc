@@ -35,10 +35,17 @@
 						 [(not (null? parent)) 'par]
 						 )])
 			(set! lattice new-lattice)))
+    (define (insert-cell cell nbrs)
+      (let ([new-cell
+             (cons (length lattice) 
+                   (cons cell
+                         (cons nbrs '())))])
+        (set! lattice (list lattice new-cell))))
 	(define (self msg)
 		(case (car msg)
 			['add-cell (add-cell (cadr msg) (caddr msg) (cadddr msg))]
 			['get-lattice lattice]
+            ['insert-cell (insert-cell (cadr msg) (caddr msg))]
 			[else "error unknown lattice message"]
 			))
 	self)
