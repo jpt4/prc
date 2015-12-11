@@ -24,8 +24,16 @@
 				))
 		self))
 
-(define (mk-lattice)
-	(define lattice '())
+;((row (cell) (cell) ...) ...)
+(define (mk-lattice x y)
+	(define lattice (generate-hex-lattice x y))
+	(define (generate-hex-lattice x y)
+		(let loop ([m 0] [n 0] [lat '()])
+			(if (< n y)
+					(if (< m x)
+							(loop (+ m 1) n (list lat '(x y)))
+							(loop 0 (+ 1 n) lat))
+					lat)))
 	(define (add-cell cell parent-index edge)
 		(let* ([parent (if (null? lattice) '() 
 											 (cadr (assoc parent-index lattice)))]
