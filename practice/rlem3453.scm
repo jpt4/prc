@@ -31,7 +31,7 @@
 		(let loop ([m 0] [n 0] [row '()] [lat '()])
 			(if (>= x m)
 					(if (>= y n)
-							(loop m (+ 1 n) (cons `(,m ,n) row) lat)
+							(loop m (+ 1 n) (cons `(,m ,n . cell) row) lat)
 							(loop (+ 1 m) 0 '() (cons (reverse row) lat)))
 					(reverse lat))))
 	(define (add-cell cell parent-index edge)
@@ -58,7 +58,7 @@
 			))
 	self)
 (define rtst (mk-rlem3453))
-
+(define lattst (mk-lattice 8 9))
 (define (rlem3453 inp)
 	(let* ([mem (car inp)]
 				 [sym (cadr inp)]
