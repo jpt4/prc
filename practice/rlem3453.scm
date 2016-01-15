@@ -1,6 +1,8 @@
 ;rlem3453.scm  jpt4  UTC20151204
 ;RLEM 3-453, circuits thereof
 
+(define r0 (mk-rlem3453))
+
 (define (mk-rlem3453)
 	(let* ([mem 0]
 				 [sym '(_ _ _)]
