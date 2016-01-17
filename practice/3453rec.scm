@@ -4,6 +4,11 @@
 ;;RLEM-3453 universal cells using record types
 ;;Guile Scheme v2.2
 
+#|
+3-phase async co-ordination method:
+{A,B,C} = recv-ready, recv-1, send-ready, send-1
+|#
+
 (use-modules (srfi srfi-9))
 
 (define-record-type <rlem-3453-state>
@@ -12,17 +17,21 @@
 	(memory mem	mem!) ;0,r (default) 1,l
 	(sym-a sya sya!) (sym-b syb syb!) (sym-c syc syc!)) ;0 (default) 1
 
+(define (uc-lat s)
+	(define lattice (map (lambda (a) (rlem-3453-state '0 '0 '0 '0)) (iota (- s 1))))
+	(define (self msg)
+		(case (car msg)
+			['lattice-ref (list-ref lattice (cadr msg))]
+			[else `(error message ,msg unknown)]
+			))
+	self)
+
+#|
+(define-record-type <3453-meta-state>
+	(3453-meta-state 
+|#
+
 (define a-val cadr) (define b-val caddr) (define c-val cadddr)
-
-;;TODO Step through pure functions with lazy evaluation.
-
-;   /c
-;a-r0
-;   \b
-(define r0 (rlem3453 0 1 0 0))
-(define r0b (rlem3453 0 0 (b-val r0) 0))
-(define r0c (rlem3453 0 0 0 (c-val r0)))
-
 
 
 (define (rlem3453 mem a b c)
@@ -38,6 +47,15 @@
 				 [new-head (list-tail ls (- (length ls) snum))]
 				 [new-tail (list-head ls (- (length ls) snum))])
 		(append new-head new-tail)))
+
+;;TODO Step through pure functions with lazy evaluation.
+
+;   /c
+;a-r0
+;   \b
+(define r0 (rlem3453 0 1 0 0))
+(define r0b (rlem3453 0 0 (b-val r0) 0))
+(define r0c (rlem3453 0 0 0 (c-val r0)))
 
 #|
 (define (uc-3453-node inp)
