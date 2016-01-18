@@ -17,15 +17,6 @@
 	(memory mem	mem!) ;0,r (default) 1,l
 	(sym-a sya sya!) (sym-b syb syb!) (sym-c syc syc!)) ;0 (default) 1
 
-(define (uc-lat s)
-	(define lattice (map (lambda (a) (rlem-3453-state '0 '0 '0 '0)) (iota (- s 1))))
-	(define (self msg)
-		(case (car msg)
-			['lattice-ref (list-ref lattice (cadr msg))]
-			[else `(error message ,msg unknown)]
-			))
-	self)
-
 (define (next-state rlem)
 	(let* ([sym (list (sya rlem) (syb rlem) (syc rlem))]
 				[new-sym (case (mem rlem)
@@ -38,6 +29,15 @@
 		rlem))
 
 (define tstrlem0 (rlem-3453-state 0 0 0 0))
+
+(define (uc-lat s)
+	(define lattice (map (lambda (a) (rlem-3453-state '0 '0 '0 '0)) (iota (- s 1))))
+	(define (self msg)
+		(case (car msg)
+			['lattice-ref (list-ref lattice (cadr msg))]
+			[else `(error message ,msg unknown)]
+			))
+	self)
 
 #|
 (define-record-type <3453-meta-state>
