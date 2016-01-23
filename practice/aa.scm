@@ -86,22 +86,26 @@ MASTER-SCHEDULER(T+1)
 	(neighbor-a nba nba!) (neighbor-b nbb nbb!) (neighbor-c nbc nbc!)
 )
 
-(define (rlem-3453 id mem ai bi ci ao bo co na nb nc)
+;;don't develop rlem object unless rlem record proves insufficient
+#;(define (rlem-3453 id mem ai bi ci ao bo co na nb nc)
 	(define state (rlem-3453-state id mem ai bi ci ao bo co na nb nc))
 	
 	(define (self msg)
-		'msg)
+		(case (car msg)
+			['state state]
+			)
+		)
 	self
 )
 
-(define (lattice r c . cell-neighbor-list)
-	(define neighbor-list (if (null? cell-neighbor-list)
-														(hex-grid r c)
-														(car cell-neighbor-list)))
+(define (rlem3453-lattice r c . nbr-list)
+	(define neighbor-list (if (null? nbr-list)
+														(cell-hex-grid r c rlem-3453-state)
+														(car nbr-list)))
 	(define activation-order (random-permutation neighbor-list))
 
 	(define (cell-mem! index value)
-		(mem! (list-ref neighbor-list index) value))
+		((list-ref neighbor-list index) (list 'mem! value))) 
 	(define (cell-in! index channel value)
 		(let ([op (case channel ['a ai!] ['b bi!] ['c ci!])])
 			(op (list-ref neighbor-list index) value)
@@ -111,6 +115,8 @@ MASTER-SCHEDULER(T+1)
 		(case (car msg)
 			['neighbor-list neighbor-list]
 			['activation-order activation-order]
+			['reset-activation-order (set! activation-order
+																		 (random-permutation neighbor-list))]
 			['cell-state (list-ref neighbor-list (cadr msg))]
 			['cell-mem! (cell-mem! (cadr msg) (caddr msg))]
 			['cell-in! (cell-in! (cadr msg) (caddr msg) (cadddr msg))]
@@ -119,7 +125,17 @@ MASTER-SCHEDULER(T+1)
 	self
 )
 
-(define (hex-grid rows cols)
+(define (cell-hex-grid rows cols cell-type)
+	(let* ([size (* rows cols)]
+				 [base (map (lambda (t) (cell-type t 0 0 0 0 0 0 0 0 0 0)) (iota size)]
+				 [p (rlem-3453-state 'p 0 0 0 0 0 0 0 0 0 0)] ;perimeter trivial node
+				 )
+		(let next ([r 0] [c 0] [acc '()])
+			(if (even? (- r 1) ;r as row index
+					(cond
+					 [(zero? (- c 1)) ;c as col index
+						(nba! (list-ref base (* 
+		
 	'(rows x cols)
 )
 
@@ -130,12 +146,25 @@ MASTER-SCHEDULER(T+1)
 		 [(null? ls) acc]
 		 [else (let ([r (random (length ls))])
 						 (tail (cons (list-ref ls r) acc) (remove-list-ref ls r)))])))
+
 ;;produce list sans element at index ref
 (define (remove-list-ref ls ref)
 	(append (list-head ls ref) (list-tail ls (+ ref 1))))
 
+;;helper functions
+(define (dispnl* txt)
+	(if (not (null? txt))
+			(begin (display (car txt)) (newline) (dispnl* (cdr txt)))))
+
 ;;test suite
-(define tstrlem0 (rlem-3453 0 0 0 0 0 0 0 0 0 0 0))
-(define tstlat0 (lattice 5 4))
+;(define tstrlem0 (rlem-3453 0 0 0 0 0 0 0 0 0 0 0))
+(define tstlat0 (rlem-3453-lattice 5 4))
 (define (tests)
-	(tstlat0 '(neighbor-list)))
+	(dispnl* (list 
+;						(tstrlem0 '(state))
+						(tstlat0 '(neighbor-list))
+						(tstlat0 '(activation-order))
+						(tstlat0 '(reset-activation-order))
+						(tstlat0 '(activation-order))
+						
+						)))
