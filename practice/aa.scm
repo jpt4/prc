@@ -125,9 +125,11 @@ MASTER-SCHEDULER(T+1)
 	self
 )
 
+;;f(rows, cols) => neighbor-list, neighbor-list:={(Id,nba,nbb,nbc)...}
 (define (cell-hex-grid rows cols cell-type)
 	(let* ([size (* rows cols)]
-				 [base (map (lambda (t) (cell-type t 0 0 0 0 0 0 0 0 0 0)) (iota size)]
+				 [base (map (lambda (t) (cell-type t 0 0 0 0 0 0 0 0 0 0)) 
+										(iota size)]
 				 [p (rlem-3453-state 'p 0 0 0 0 0 0 0 0 0 0)] ;perimeter trivial node
 				 )
 		(let next ([r 0] [c 0] [acc '()])
@@ -136,7 +138,7 @@ MASTER-SCHEDULER(T+1)
 					 [(zero? (- c 1)) ;c as col index
 						(nba! (list-ref base (* 
 		
-	'(rows x cols)
+;	'(rows x cols)
 )
 
 ;;randomly permute a list
