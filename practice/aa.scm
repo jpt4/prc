@@ -132,11 +132,15 @@ MASTER-SCHEDULER(T+1)
 										(iota size)]
 				 [p (rlem-3453-state 'p 0 0 0 0 0 0 0 0 0 0)] ;perimeter trivial node
 				 )
-		(let next ([r 0] [c 0] [acc '()])
-			(if (even? (- r 1) ;r as row index
-					(cond
-					 [(zero? (- c 1)) ;c as col index
-						(nba! (list-ref base 
+		(let next ([r 0] [left-most (* r col)])
+			(if (even? r) ;r as row y-co-ordinate
+					
+					(ai! (list-ref base left-most) (+ 1 left-most))
+					(bi! (list-ref base left-most) (if (> (+ left-most 1) size)
+																						 p
+																						 (+ left-most 1)))
+					(ci! (
+					(map (lambda (e) (
 		
 ;	'(rows x cols)
 )
