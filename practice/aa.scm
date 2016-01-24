@@ -136,7 +136,7 @@ MASTER-SCHEDULER(T+1)
 			(if (even? (- r 1) ;r as row index
 					(cond
 					 [(zero? (- c 1)) ;c as col index
-						(nba! (list-ref base (* 
+						(nba! (list-ref base 
 		
 ;	'(rows x cols)
 )
