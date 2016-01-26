@@ -98,26 +98,26 @@ MASTER-SCHEDULER(T+1)
 	self
 )
 
-(define (rlem3453-lattice r c . nbr-list)
-	(define neighbor-list (if (null? nbr-list)
-														(cell-hex-grid r c rlem-3453-state)
-														(car nbr-list)))
-	(define activation-order (random-permutation neighbor-list))
-
+(define (rlem-3453-lattice r c . cl-list)
+	(define perimeter-cell  ;default perimeter trivial cell				 
+		(rlem-3453-state 'p 0 0 0 0 0 0 0 '_ '_ '_))
+	(define cell-list (if (null? cl-list) (rlem-hex-grid r c) (car cl-list)))
+	(define activation-order (random-permutation 
+														(list-head cell-list (- (length cell-list) 1))))
 	(define (cell-mem! index value)
-		((list-ref neighbor-list index) (list 'mem! value))) 
+		((list-ref cell-list index) (list 'mem! value))) 
 	(define (cell-in! index channel value)
 		(let ([op (case channel ['a ai!] ['b bi!] ['c ci!])])
-			(op (list-ref neighbor-list index) value)
+			(op (list-ref cell-list index) value)
 			))			
 
 	(define (self msg)
 		(case (car msg)
-			['neighbor-list neighbor-list]
+			['cell-list cell-list]
 			['activation-order activation-order]
 			['reset-activation-order (set! activation-order
-																		 (random-permutation neighbor-list))]
-			['cell-state (list-ref neighbor-list (cadr msg))]
+																		 (random-permutation activation-order))]
+			['cell-state (list-ref cell-list (cadr msg))]
 			['cell-mem! (cell-mem! (cadr msg) (caddr msg))]
 			['cell-in! (cell-in! (cadr msg) (caddr msg) (cadddr msg))]
 			))
@@ -126,35 +126,36 @@ MASTER-SCHEDULER(T+1)
 )
 
 ;;f(rows, cols) => neighbor-list, neighbor-list:={(Id,nba,nbb,nbc)...}
-(define (cell-hex-grid rows cols cell-type)
+(define (rlem-hex-grid rows cols)
 	(let* ([size (* rows cols)]
-				 [base (map (lambda (t) (cell-type t 0 0 0 0 0 0 0 0 0 0)) 
-										(iota size)]
-				 [p (rlem-3453-state 'p 0 0 0 0 0 0 0 0 0 0)] ;perimeter trivial node
-				 )
-				 (let next ([i 0] [r 0] [c 0])
-					 (let ([e (list-ref base i)])
-						 (cond
-							[(equal? i size) base] ;all points en-neighbored?
-							[(even? c) ;point in even column?
-							 (ai! e (if (zero? c) p (west-index i))) ;left-most column?
-							 (bi! e (if (or (zero? r) (equals? c (- cols 1)) ;bottom row or 
-															p                             ;right-most column?
-															(south-east-index i cols))))
-							 (ci! e (if (equal? c (- cols 1)) ;right-most column?
-													p 
-													(north-east i))) 
-							 (if (equal? c (- cols 1))
-									 (next
-										 (if (equal? 
-									 
-															 
-												
-																			 
-
-		
-;	'(rows x cols)
-)
+				 [p	(rlem-3453-state 'p 0 0 0 0 0 0 0 '_ '_ '_)]
+				 [base (map (lambda (t) (rlem-3453-state t 0 0 0 0 0 0 0 0 0 0)) 
+										(iota size))])
+		(let next ([i 0] [r 0] [c 0])
+			(if (equal? i size) (append base (list p)) ;all points en-neighbored?
+					(let ([e (list-ref base i)])
+						(id! e i)
+						(cond
+						 [(even? c) ;point in even column?
+							(nba! e (if (zero? c) 'p (west-index i))) ;left-most column?
+							(nbb! e (if (or (zero? r) (equal? c (- cols 1))) ;bottom row or 
+													'p                             ;right-most column?
+													(south-east-index i cols)))
+							(nbc! e (if (equal? c (- cols 1)) ;right-most column?
+													'p 
+													(north-east-index i)))]
+						 [(odd? c) ;point in odd column?
+							(nba! e (if (equal? c (- cols 1)) ;right-most column?
+												 'p
+												 (east-index i)))
+							(nbb! e (if (equal? r (- rows 1)) ;upper row?
+												 'p
+												 (north-west-index i cols)))
+							(nbc! e (south-west-index i))])
+						(if (equal? c (- cols 1)) ;end of row?
+								(next (+ i 1) (+ r 1) 0)
+								(next (+ i 1) r (+ c 1)))
+						)))))
 
 (define (west-index i) (- i 1))
 (define (east-index i) (+ i 1))
@@ -163,8 +164,6 @@ MASTER-SCHEDULER(T+1)
 (define (north-west-index i cols) (- (+ i cols) 1))
 (define (south-east-index i cols) (+ (- i cols) 1))
 
-
-						
 ;;randomly permute a list
 (define (random-permutation list)
 	(let tail ([acc '()] [ls list])
@@ -177,20 +176,32 @@ MASTER-SCHEDULER(T+1)
 (define (remove-list-ref ls ref)
 	(append (list-head ls ref) (list-tail ls (+ ref 1))))
 
-;;helper functions
-(define (dispnl* txt)
+;;utility functions
+(define (dispnl* txt . res)
+	(cond
+	 [(pair? txt)	(begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
+	 [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
+
+(define (alt-dispnl* txt)
 	(if (not (null? txt))
 			(begin (display (car txt)) (newline) (dispnl* (cdr txt)))))
 
 ;;test suite
-;(define tstrlem0 (rlem-3453 0 0 0 0 0 0 0 0 0 0 0))
+(define tstrlem0 (rlem-3453-state 'tst 0 0 0 0 0 0 0 0 0 0))
+(define tstgrid0 (rlem-hex-grid 5 4))
 (define tstlat0 (rlem-3453-lattice 5 4))
 (define (tests)
-	(dispnl* (list 
+;	(dispnl* 
 ;						(tstrlem0 '(state))
-						(tstlat0 '(neighbor-list))
-						(tstlat0 '(activation-order))
-						(tstlat0 '(reset-activation-order))
-						(tstlat0 '(activation-order))
-						
-						)))
+(begin
+		(dispnl* 'cell-list)
+		(dispnl* 'cell-tst (dispnl* (tstlat0 '(cell-list))))
+		(dispnl* 'activation-order)
+		(dispnl* (tstlat0 '(activation-order)))
+		(dispnl* 'reset-activation-order)
+		(tstlat0 '(reset-activation-order))
+		(dispnl* 'activation-order)
+		(dispnl* (tstlat0 '(activation-order)))
+		
+	 )
+	)
