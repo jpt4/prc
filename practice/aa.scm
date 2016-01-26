@@ -132,19 +132,39 @@ MASTER-SCHEDULER(T+1)
 										(iota size)]
 				 [p (rlem-3453-state 'p 0 0 0 0 0 0 0 0 0 0)] ;perimeter trivial node
 				 )
-		(let next ([r 0] [left-most (* r col)])
-			(if (even? r) ;r as row y-co-ordinate
-					
-					(ai! (list-ref base left-most) (+ 1 left-most))
-					(bi! (list-ref base left-most) (if (> (+ left-most 1) size)
-																						 p
-																						 (+ left-most 1)))
-					(ci! (
-					(map (lambda (e) (
+				 (let next ([i 0] [r 0] [c 0])
+					 (let ([e (list-ref base i)])
+						 (cond
+							[(equal? i size) base] ;all points en-neighbored?
+							[(even? c) ;point in even column?
+							 (ai! e (if (zero? c) p (west-index i))) ;left-most column?
+							 (bi! e (if (or (zero? r) (equals? c (- cols 1)) ;bottom row or 
+															p                             ;right-most column?
+															(south-east-index i cols))))
+							 (ci! e (if (equal? c (- cols 1)) ;right-most column?
+													p 
+													(north-east i))) 
+							 (if (equal? c (- cols 1))
+									 (next
+										 (if (equal? 
+									 
+															 
+												
+																			 
+
 		
 ;	'(rows x cols)
 )
 
+(define (west-index i) (- i 1))
+(define (east-index i) (+ i 1))
+(define (north-east-index i) (+ i 1))
+(define (south-west-index i) (- i 1))
+(define (north-west-index i cols) (- (+ i cols) 1))
+(define (south-east-index i cols) (+ (- i cols) 1))
+
+
+						
 ;;randomly permute a list
 (define (random-permutation list)
 	(let tail ([acc '()] [ls list])
