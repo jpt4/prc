@@ -99,29 +99,73 @@ MASTER-SCHEDULER(T+1)
 )
 
 (define (rlem-3453-lattice r c . cl-list)
-	(define perimeter-cell  ;default perimeter trivial cell				 
-		(rlem-3453-state 'p 0 0 0 0 0 0 0 '_ '_ '_))
 	(define cell-list (if (null? cl-list) (rlem-hex-grid r c) (car cl-list)))
-	(define activation-order (random-permutation 
-														(list-head cell-list (- (length cell-list) 1))))
+	(define activation-order (map id (random-permutation (cdr cell-list))))
+	(define (reset-activation-order) 
+		(set! activation-order (random-permutation activation-order)))
+	(define (cell-list-ref index) (if (equal? index 'p) 
+																		(car cell-list)
+																		(list-ref (cdr cell-list) index)))
 	(define (cell-mem! index value)
-		((list-ref cell-list index) (list 'mem! value))) 
+		(mem! (cell-list-ref index) value))
 	(define (cell-in! index channel value)
 		(let ([op (case channel ['a ai!] ['b bi!] ['c ci!])])
-			(op (list-ref cell-list index) value)
-			))			
-
+			(op (cell-list-ref index) value)))
+	(define (cell-out! index channel value)
+		(let ([op (case channel ['a ao!] ['b bo!] ['c co!])])
+			(op (cell-list-ref index) value)))
+	(define (update-cell index)
+		(let* ([cell (cell-list-ref index)] 
+					 [in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
+					 [out (list (ao cell) (bo cell) (co cell))]           
+					 [nba (cell-list-ref (nba cell))] 
+					 [nbb (cell-list-ref (nbb cell))]
+					 [nbc (cell-list-ref (nbc cell))]
+					 [empty? (lambda (c) (equal? '(0 0 0) c))]
+					 [inhale ;gather new input from neighbors' outputs
+						(lambda () 
+							(begin
+								(ai! cell (ao nba)) (bi! cell (bo nbb)) (ci! cell (co nbc))
+								(ao! nba 0) (bo! nbb 0) (co! nbc 0)))] ;clear nbr outputs
+					 [process 
+						(lambda ()
+							(if (not (empty? (in))) ;did (inhale) acquire new input?
+									(begin
+										(case (mem cell) ;rotate in right/left, write to out
+											['0 (ao! cell (ci cell)) (bo! cell (ai cell)) ;right
+													(co! cell (bi cell))]
+											['1 (ao! cell (bi cell)) (bo! cell (ci cell)) ;left
+													(co! cell (ai cell))])
+										(ai! cell 0) (bi! cell 0) (ci! cell 0) ;clear inputs
+										(mem! cell (abs (- (mem cell) 1))))))]) ;mem switch
+			(cond
+			 [(and (empty? out) (empty? (in))) (begin (inhale) (process))]
+			 [(and (empty? out) (not (empty? (in)))) (process)]
+			 [(and (not (empty? out)) (empty? (in))) (inhale)])
+			))
+	(define (update-lattice steps)
+		(let next ([t 0])
+			(if (< t steps)
+					(begin 
+						(map update-cell activation-order)
+						(reset-activation-order)
+						(next (+ 1 t))))))
+	
 	(define (self msg)
 		(case (car msg)
+			;inspect
 			['cell-list cell-list]
 			['activation-order activation-order]
-			['reset-activation-order (set! activation-order
-																		 (random-permutation activation-order))]
-			['cell-state (list-ref cell-list (cadr msg))]
+			['cell-state (cell-list-ref (cadr msg))]
+			;manipulate
+			['reset-activation-order (reset-activation-order)]
 			['cell-mem! (cell-mem! (cadr msg) (caddr msg))]
 			['cell-in! (cell-in! (cadr msg) (caddr msg) (cadddr msg))]
-			))
-										
+			['cell-out! (cell-out! (cadr msg) (caddr msg) (cadddr msg))]
+			;iterate
+			['update-cell (update-cell (cadr msg))]
+			['update-lattice (update-lattice (cadr msg))]
+			))										
 	self
 )
 
@@ -132,7 +176,7 @@ MASTER-SCHEDULER(T+1)
 				 [base (map (lambda (t) (rlem-3453-state t 0 0 0 0 0 0 0 0 0 0)) 
 										(iota size))])
 		(let next ([i 0] [r 0] [c 0])
-			(if (equal? i size) (append base (list p)) ;all points en-neighbored?
+			(if (equal? i size) (cons p base) ;all points en-neighbored?
 					(let ([e (list-ref base i)])
 						(id! e i)
 						(cond
@@ -187,21 +231,54 @@ MASTER-SCHEDULER(T+1)
 			(begin (display (car txt)) (newline) (dispnl* (cdr txt)))))
 
 ;;test suite
+(define (random-lattice r c)
+	(let ([lat (rlem-3453-lattice r c)]
+				[flip (lambda () (random 2))])
+		(map (lambda (i) 
+					 (lat `(cell-mem! ,i ,(flip)))
+					 (lat `(cell-in! ,i a ,(flip)))
+					 (lat `(cell-in! ,i b ,(flip)))
+					 (lat `(cell-in! ,i c ,(flip)))
+					 (lat `(cell-out! ,i a ,(flip)))					 
+					 (lat `(cell-out! ,i b ,(flip)))					 
+					 (lat `(cell-out! ,i c ,(flip))))
+				 (lat '(activation-order)))
+		lat))
+
+(define (step lat . t)
+	(dispnl* (cons 'original-lattice-state (lat '(cell-list))))
+	(cond
+	 [(null? t)	(step lat 1)]
+	 [(equal? (car t) 1) (begin 
+												 (lat '(update-lattice 1))
+												 (dispnl* (cons `(steps-to-go ,(car t)) 
+																				(lat '(cell-list)))))]
+	 [else (begin 		 
+					 (lat '(update-lattice 1))
+					 (dispnl* (cons `(steps-to-go ,(car t)) (lat '(cell-list))))
+					 (step lat (- (car t) 1)))]))
+
 (define tstrlem0 (rlem-3453-state 'tst 0 0 0 0 0 0 0 0 0 0))
 (define tstgrid0 (rlem-hex-grid 5 4))
 (define tstlat0 (rlem-3453-lattice 5 4))
+(define randlat0 (random-lattice 5 5))
 (define (tests)
-;	(dispnl* 
-;						(tstrlem0 '(state))
-(begin
-		(dispnl* 'cell-list)
-		(dispnl* 'cell-tst (dispnl* (tstlat0 '(cell-list))))
-		(dispnl* 'activation-order)
-		(dispnl* (tstlat0 '(activation-order)))
-		(dispnl* 'reset-activation-order)
-		(tstlat0 '(reset-activation-order))
-		(dispnl* 'activation-order)
-		(dispnl* (tstlat0 '(activation-order)))
-		
-	 )
-	)
+	;simple tests
+	(dispnl* (cons 'tstlat0-cell-list-new-born (tstlat0 '(cell-list))))
+	(dispnl* (list 'activation-order (tstlat0 '(activation-order))))
+	(dispnl* (cons 'reset-activation-order (tstlat0 '(reset-activation-order))))
+	(dispnl* (list 'activation-order (tstlat0 '(activation-order))))
+	;single cell tests
+	(dispnl* (cons 'cell-5-pre-ai! (tstlat0 '(cell-state 5))))
+	(dispnl* (cons 'cell-in!-5-a-1 (tstlat0 '(cell-in! 5 a 1))))
+	(dispnl* (cons 'cell-5-pre-update (tstlat0 '(cell-state 5))))
+	(dispnl* (cons 'update-cell-5 (tstlat0 '(update-cell 5))))
+	(dispnl* (cons 'cell-5-post-update (tstlat0 '(cell-state 5))))
+	(dispnl* (cons 'cell-8-pre-update (tstlat0 '(cell-state 8))))
+	(dispnl* (cons 'update-cell-8 (tstlat0 '(update-cell 8))))
+	(dispnl* (cons 'cell-8-post-update (tstlat0 '(cell-state 8))))
+	;randomized lattice tests
+	(dispnl* (cons 'randlat0-cell-list-new-born (randlat0 '(cell-list))))
+	(dispnl* (cons 'randlat0-update-lattice-5 (randlat0 '(update-lattice 5))))
+	(dispnl* (cons 'randlat0-cell-post-update-lattice-5 (randlat0 '(cell-list))))
+)
