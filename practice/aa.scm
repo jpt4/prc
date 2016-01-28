@@ -277,22 +277,29 @@ values so that they do not block.
 					 (lat `(cell-in! ,i a ,(flip)))
 					 (lat `(cell-in! ,i b ,(flip)))
 					 (lat `(cell-in! ,i c ,(flip)))
-					 (lat `(cell-out! ,i a ,(flip)))					 
-					 (lat `(cell-out! ,i b ,(flip)))					 
-					 (lat `(cell-out! ,i c ,(flip))))
+					 (lat `(cell-out! ,i a ,(if (equal? (nba (lat `(cell-state ,i))) 'p)
+																			0 (flip))))
+					 (lat `(cell-out! ,i b ,(if (equal? (nbb (lat `(cell-state ,i))) 'p)
+																			0 (flip))))					 
+					 (lat `(cell-out! ,i c ,(if (equal? (nbc (lat `(cell-state ,i))) 'p)
+																			0 (flip)))))
 				 (lat '(activation-order)))
 		lat))
 
-;;step through a lattice's evolution, displaying each state change
+;;display the overall lattice state evolution over t units of time
 (define (step lat . t)
 	(dispnl* (cons 'original-lattice-state (lat '(cell-list))))
 	(let next ([ts (if (null? t) 1 (car t))])
 		(cond
 		 [(equal? ts 1) (begin 
+											(dispnl* (list 'current-activation-order 
+																		 (lat '(activation-order))))
 											(lat '(update-lattice 1))
 											(dispnl* (cons `(steps-to-go ,ts) 
 																		 (lat '(cell-list)))))]
 		 [else (begin 		 
+						 (dispnl* (list 'current-activation-order 
+														(lat '(activation-order))))
 						 (lat '(update-lattice 1))
 						 (dispnl* (cons `(steps-to-go ,ts) (lat '(cell-list))))
 						 (next (- ts 1)))])))
