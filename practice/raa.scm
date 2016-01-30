@@ -17,15 +17,31 @@
   (a-out ao ao!) (b-out bo bo!) (c-out co co!)
 	(buffer buf buf!) (high-rail hig hig!) (low-rail low low!)
   (neighbor-a nba nba!) (neighbor-b nbb nbb!) (neighbor-c nbc nbc!)
-)
-;;XX OLD UPDATE
-(define (update-cell index)
-	(let* ([cell (cell-list-ref index)] 
-				 [in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
+	)
+
+(define (cell-list-ref cell-list index) 
+	(if (equal? index 'p) 
+			(car cell-list)
+			(list-ref (cdr cell-list) index)))
+
+;;directions
+(define (west-index i) (- i 1))
+(define (east-index i) (+ i 1))
+(define (north-east-index i) (+ i 1))
+(define (south-west-index i) (- i 1))
+(define (north-west-index i cols) (- (+ i cols) 1))
+(define (south-east-index i cols) (+ (- i cols) 1))
+
+(define (dispnl* txt . res)
+  (cond
+   [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
+   [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
+
+;;XX STILL OLD UPDATE
+(define (update-cell cell)
+	(let* ([in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
 				 [out (list (ao cell) (bo cell) (co cell))]           
-				 [nbra (cell-list-ref (nba cell))] 
-				 [nbrb (cell-list-ref (nbb cell))]
-				 [nbrc (cell-list-ref (nbc cell))]
+				 [nbra (nba cell)] [nbrb (nbb cell)] [nbrc (nbc cell)]
 				 [empty? (lambda (c) (equal? '(0 0 0) c))]
 				 [inhale ;gather new input from neighbors' outputs
 					(lambda () 
@@ -42,11 +58,11 @@
 										['1 (ao! cell (bi cell)) (bo! cell (ci cell)) ;left
 												(co! cell (ai cell))])
 									(ai! cell 0) (bi! cell 0) (ci! cell 0) ;clear inputs
-									(if (equal? (nba cell) 'p) 
-											(ao! cell 0))          ;}if cell borders the perimeter
-									(if (equal? (nbb cell) 'p) ;}immediately dispose of its
-											(bo! cell 0))          ;}output channel values
-									(if (equal? (nbc cell) 'p) 
+									(if (equal? (id nba) 'p) 
+											(ao! cell 0))        ;}if cell borders the perimeter
+									(if (equal? (id nbb) 'p) ;}immediately dispose of its
+											(bo! cell 0))        ;}output channel values
+									(if (equal? (id nbc) 'p) 
 											(co! cell 0))
 									(mem! cell (abs (- (mem cell) 1))))))]) ;mem switch
 		(cond
@@ -54,3 +70,49 @@
 		 [(and (empty? out) (not (empty? (in)))) (process)]
 		 [(and (not (empty? out)) (empty? (in))) (inhale)])
 		))
+
+(define (rlem-hex-grid rows cols)
+  (let* ([nbrls (hex-neighbor-list rows cols)]
+         [p (rlem-3453-state 'p '_ '_ 0 0 0 0 0 0 '() '_ '_ '_ '_ '_ )]
+         [base (cons p (map (lambda (t) (rlem-3453-state 
+																				 t 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+														(iota (* rows cols))))])
+		(map (lambda (e)
+					 (nba! (cell-list-ref base (car e))
+								 (cell-list-ref base (cadr e)))
+					 (nbb! (cell-list-ref base (car e))
+								 (cell-list-ref base (caddr e)))
+					 (nbc! (cell-list-ref base (car e))
+								 (cell-list-ref base (cadddr e)))
+					 )
+				 nbrls)))
+
+(define (hex-neighbor-list rows cols)
+	(let ([size (* rows cols)])
+		(let next ([i 0] [r 0] [c 0] [nls '()])
+      (if (equal? i size) nls ;all points en-neighbored?
+					(let ([new-n 
+								 (cond
+									[(even? c) ;point in even column?
+									 (list i 
+												 (if (zero? c) 'p (west-index i)) ;left column?
+												 (if (or (zero? r) (equal? c (- cols 1))) ;bottom row/ 
+														 'p                                  ;right column?
+														 (south-east-index i cols))
+												 (if (equal? c (- cols 1)) ;right-most column?
+														 'p 
+														 (north-east-index i)))]
+									[(odd? c) ;point in odd column?
+									 (list i 
+												 (if (equal? c (- cols 1)) ;right-most column?
+														 'p
+														 (east-index i))
+												 (if (equal? r (- rows 1)) ;upper row?
+														 'p
+														 (north-west-index i cols))
+												 (south-west-index i))])])
+            (if (equal? c (- cols 1)) ;end of row?
+                (next (+ i 1) (+ r 1) 0 (append nls (list new-n)))
+                (next (+ i 1) r (+ c 1) (append nls (list new-n))))
+						)))))
+
