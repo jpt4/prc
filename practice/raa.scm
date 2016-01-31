@@ -87,6 +87,51 @@
 					 )
 				 nbrls)))
 
+(define (map-hnl rows cols)
+	(let ([grid (flatten (cartesian-product (iota cols) (iota rows)))])
+		grid))
+
+;f((a ...) (b ...)) = (((a b) (a ...)) (... b) (... ...))
+(define (cartesian-product lsa lsb)
+	(map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
+
+(define (naive-flatten ls)
+	(cond
+	 [(null? ls) ls]
+	 [(pair? (car ls)) (cons (caar ls) (naive-flatten (append (cdar ls) (cdr ls))))]
+	 [else (cons (car ls) (naive-flatten (cdr ls)))]))
+
+;from http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
+;; Similar to SRFI 1's fold
+(define (fold1 kons knil lst)
+	(if (null? lst)
+			knil
+			(fold1 kons (kons (car lst) knil) (cdr lst))))
+
+;; Same as R5RS's reverse
+(define (reverse lst)
+	(fold1 cons '() lst))
+
+;; Helper function
+(define (reverse-flatten-into x lst)
+	(if (pair? x)
+			(fold1 reverse-flatten-into lst x)
+			(cons x lst)))
+
+(define (deep-flatten lst)
+	  (reverse (reverse-flatten-into lst '())))
+
+
+#|sophisticated flatten: 
+unpack n layers deep, * if unspecified
+do/not preserve unpacked '() elements <-- via preprocess tagging?					 
+|#
+
+(define (zip lsa lsb)
+	(map (lambda (e) (list (list-ref lsa e)
+												 (list-ref lsb e)))
+			 (iota (length lsa))))
+
 (define (hex-neighbor-list rows cols)
 	(let ([size (* rows cols)])
 		(let next ([i 0] [r 0] [c 0] [nls '()])
@@ -111,8 +156,8 @@
 														 'p
 														 (north-west-index i cols))
 												 (south-west-index i))])])
-            (if (equal? c (- cols 1)) ;end of row?
-                (next (+ i 1) (+ r 1) 0 (append nls (list new-n)))
-                (next (+ i 1) r (+ c 1) (append nls (list new-n))))
+            (if (<= c cols) ;not end of row?
+                (next (+ i 1) r (+ c 1) (append nls (list new-n))) ;next col
+                (next (+ i 1) (+ r 1) 0 (append nls (list new-n)))) ;next row
 						)))))
 
