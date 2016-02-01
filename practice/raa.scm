@@ -88,20 +88,23 @@
 				 nbrls)))
 
 (define (map-hnl rows cols)
-	(let ([grid (flatten (cartesian-product (iota cols) (iota rows)))])
+	(let ([grid (unpack (cartesian-product (iota cols) (iota rows)) '())])
 		grid))
 
 ;f((a ...) (b ...)) = (((a b) (a ...)) (... b) (... ...))
 (define (cartesian-product lsa lsb)
 	(map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
 
-(define (naive-flatten ls)
+(define (unpack ls acc)
 	(cond
-	 [(null? ls) ls]
-	 [(pair? (car ls)) (cons (caar ls) (naive-flatten (append (cdar ls) (cdr ls))))]
-	 [else (cons (car ls) (naive-flatten (cdr ls)))]))
+	 [(null? ls) (reverse acc)]
+	 [(and (pair? (car ls)) (not (null? (cdar ls))))
+		(unpack (cons (cdar ls) (cdr ls)) (cons (caar ls) acc))]
+	 [(and (pair? (car ls)) (null? (cdar ls)))
+		(unpack (cdr ls) (cons (caar ls) acc))]
+	 [else (cons (car ls) (unpack (cdr ls) acc))]))
 
-;from http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
+;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
 ;; Similar to SRFI 1's fold
 (define (fold1 kons knil lst)
 	(if (null? lst)
