@@ -7,7 +7,7 @@
 ;;import record types
 (use-modules (srfi srfi-9))
 
-;;cell
+;;cell state
 (define-record-type <rlem-3453-state>
   (rlem-3453-state id role memory a-in b-in c-in a-out b-out c-out buffer
                    high-rail low-rail neighbor-a neighbor-b neighbor-c)
@@ -38,17 +38,20 @@
    [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
 
 ;;XX STILL OLD UPDATE
-(define (update-cell cell)
-	(let* ([in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
+(define (update-cell cell-index cell-list)
+	(let* ([cell (cell-list-ref cell-list cell-index)]
+				 [in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
 				 [out (list (ao cell) (bo cell) (co cell))]           
-				 [nbra (nba cell)] [nbrb (nbb cell)] [nbrc (nbc cell)]
+				 [nbra (cell-list-ref cell-list (nba cell))] 
+				 [nbrb (cell-list-ref cell-list (nbb cell))] 
+				 [nbrc (cell-list-ref cell-list (nbc cell))]
 				 [empty? (lambda (c) (equal? '(0 0 0) c))]
 				 [inhale ;gather new input from neighbors' outputs
 					(lambda () 
 						(begin
 							(ai! cell (ao nbra)) (bi! cell (bo nbrb)) (ci! cell (co nbrc))
 							(ao! nbra 0) (bo! nbrb 0) (co! nbrc 0)))] ;clear nbr outputs
-				 [process 
+				 [logic-process 
 					(lambda ()
 						(if (not (empty? (in))) ;did (inhale) acquire new input?
 								(begin
@@ -64,32 +67,67 @@
 											(bo! cell 0))        ;}output channel values
 									(if (equal? (id nbc) 'p) 
 											(co! cell 0))
-									(mem! cell (abs (- (mem cell) 1))))))]) ;mem switch
-		(cond
-		 [(and (empty? out) (empty? (in))) (begin (inhale) (process))]
-		 [(and (empty? out) (not (empty? (in)))) (process)]
-		 [(and (not (empty? out)) (empty? (in))) (inhale)])
-		))
+									)))]
+				 [mem-switch (lambda () (mem! cell (abs (- (mem cell) 1))))]) 
+		(case (rol cell)
+			['proc
+			 (cond
+				[(and (empty? out) (empty? (in))) (begin (inhale) (logic-process)
+																								 (mem-switch))]
+				[(and (empty? out) (not (empty? (in)))) (begin (logic-process) 
+																											 (mem-switch))]
+				[(and (not (empty? out)) (empty? (in))) (inhale)])
+			 ]
+			['wire
+			 (cond
+				[(and (empty? out) (empty? (in))) (begin (inhale) (logic-process))]
+				[(and (empty? out) (not (empty? (in)))) (logic-process)]
+				[(and (not (empty? out)) (empty? (in))) (inhale)])
+			 ]
+			['stem 'stem]
+			 )
+		cell))
 
+;;cells do not exist outside of a grid
 (define (rlem-hex-grid rows cols)
   (let* ([nbrls (hex-neighbor-list rows cols)]
          [p (rlem-3453-state 'p '_ '_ 0 0 0 0 0 0 '() '_ '_ '_ '_ '_ )]
          [base (cons p (map (lambda (t) (rlem-3453-state 
-																				 t 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+																				 t 'wire 0 0 0 0 0 0 0 0 0 0 0 0 0))
 														(iota (* rows cols))))])
 		(map (lambda (e)
-					 (nba! (cell-list-ref base (car e))
-								 (cell-list-ref base (cadr e)))
-					 (nbb! (cell-list-ref base (car e))
-								 (cell-list-ref base (caddr e)))
-					 (nbc! (cell-list-ref base (car e))
-								 (cell-list-ref base (cadddr e)))
+					 (nba! (cell-list-ref base (car e)) (cadr e))
+					 (nbb! (cell-list-ref base (car e)) (caddr e))
+					 (nbc! (cell-list-ref base (car e)) (cadddr e))
 					 )
-				 nbrls)))
+				 nbrls)
+		base))
 
-(define (map-hnl rows cols)
-	(let ([grid (unpack (cartesian-product (iota cols) (iota rows)) '())])
-		grid))
+(define (hex-neighbor-list rows cols)
+	(let ([grid (unpack (cartesian-product (iota rows) (iota cols)) '())])
+		(map
+		 (lambda (e)
+			 (let* ([r (car e)] [c (cadr e)] [i (+ (* r cols) c)])
+				 (cond
+					[(even? c) ;point in even column?
+					 (list i 
+								 (if (zero? c) 'p (west-index i)) ;left column?
+								 (if (or (zero? r) (equal? c (- cols 1))) ;bottom row/ 
+										 'p                                  ;right column?
+										 (south-east-index i cols))
+								 (if (equal? c (- cols 1)) ;right-most column?
+										 'p 
+										 (north-east-index i)))]
+					[(odd? c) ;point in odd column?
+					 (list i 
+								 (if (equal? c (- cols 1)) ;right-most column?
+										 'p
+										 (east-index i))
+								 (if (equal? r (- rows 1)) ;upper row?
+										 'p
+										 (north-west-index i cols))
+								 (south-west-index i))])))
+		 grid)))
 
 ;f((a ...) (b ...)) = (((a b) (a ...)) (... b) (... ...))
 (define (cartesian-product lsa lsb)
@@ -135,7 +173,8 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 												 (list-ref lsb e)))
 			 (iota (length lsa))))
 
-(define (hex-neighbor-list rows cols)
+;;XX COLUMN RESET BUG WHEN INCREMENTING ROW
+(define (obsolete-hex-neighbor-list rows cols)
 	(let ([size (* rows cols)])
 		(let next ([i 0] [r 0] [c 0] [nls '()])
       (if (equal? i size) nls ;all points en-neighbored?
