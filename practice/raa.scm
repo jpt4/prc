@@ -39,7 +39,7 @@
 
 ;;XX STILL OLD UPDATE
 (define (update-cell cell-index cell-list)
-	(let* ([cell (cell-list-ref cell-list cell-index)]
+	(letrec* ([cell (cell-list-ref cell-list cell-index)]
 				 [in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
 				 [out (list (ao cell) (bo cell) (co cell))]           
 				 [nbra (cell-list-ref cell-list (nba cell))] 
@@ -71,24 +71,27 @@
 				 [buffer-process 
 					(lambda ()
 						(let ([tar (case (list-head (buf cell) 2)
-												 ['(0 0) (id nbra)]
-												 ['(0 1) (id nbrb)]
-												 ['(1 0) (id nbrc)]
-												 ['(1 1) (id cell)])]
+												 ['(0 0) ao!]
+												 ['(0 1) bo!]
+												 ['(1 0) co!]
+												 ['(1 1) ai!])]
 									[msg (case (list-tail (buf cell) 2)
 												 ['(0 0 0) 'buf-zero]
 												 ['(0 0 1) 'buf-one]
 												 ['(0 1 0) 1]
 												 ['(0 1 1) 'stem-init]
-												 ['(1 0 0) 'wire-init]
-												 ['(1 0 1) 'proc-init]
+												 ['(1 0 0) 'wire-r-init]
+												 ['(1 0 1) 'wire-l-init]
+												 ['(1 1 0) 'proc-r-init]
+												 ['(1 1 1) 'proc-l-init])])
+							(tar cell msg)))
 						]
 				 [mem-switch (lambda () (mem! cell (abs (- (mem cell) 1))))]
 				 [stem-init (lambda () (begin (rol! cell 'stem) (clear-channels)))]
 				 [clear-channels 
 					(lambda () (begin (ai! cell 0) (bi! cell 0) (ci! cell 0)
 														(ao! cell 0) (bo! cell 0) (co! cell 0)))]
-				 [full (lambda (buf) (equal? (length buf) 5))]
+				 [full? (lambda (buf) (equal? (length buf) 5))]
 				 )
 		(if (empty? (in)) (inhale)) ;every role needs data, if available
 		(case (rol cell)
@@ -102,9 +105,11 @@
 					 (stem-init)
 					 (if (empty? out) (wire-process)))
 			 ]
-			['stem (if (full? (buf cell))
-								 (buffer-process)
-								 ]
+			['stem 
+			 (if (full? (buf cell))
+					 (buffer-process)
+					 )
+			 ]
 			)
 		cell))
 
