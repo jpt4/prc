@@ -93,7 +93,9 @@
 														(ao! cell 0) (bo! cell 0) (co! cell 0)))]
 				 [full? (lambda (buf) (equal? (length buf) 5))]
 				 )
-		(if (empty? (in)) (inhale)) ;every role needs data, if available
+		(if (empty? (in)) 
+				(given-empty-input)
+				(given-some-input)) ;every role needs data, if available
 		(case (rol cell)
 			['proc
 			 (if (member 'stem-init (in))
