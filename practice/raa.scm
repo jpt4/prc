@@ -95,7 +95,7 @@
 				 )
 		(if (empty? (in)) 
 				(given-empty-input)
-				(given-some-input)) ;every role needs data, if available
+				(given-some-input))
 		(case (rol cell)
 			['proc
 			 (if (member 'stem-init (in))
