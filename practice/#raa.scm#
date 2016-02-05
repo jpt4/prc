@@ -94,23 +94,23 @@
 				 [full? (lambda (buf) (equal? (length buf) 5))]
 				 [process-with-input
 					(lambda ()
-								(case (rol cell)
-			['proc
-			 (if (member 'stem-init (in))
-					 (stem-init)
-					 (if (empty? out) (logic-process)))
-			 ]
-			['wire
-			 (if (member 'stem-init (in))
-					 (stem-init)
-					 (if (empty? out) (wire-process)))
-			 ]
-			['stem 
-			 (if (full? (buf cell))
-					 (buffer-process)
-					 )
-			 ]
-			))]
+						(case (rol cell)
+							['proc
+							 (if (member 'stem-init (in))
+									 (stem-init)
+									 (if (empty? out) (logic-process)))
+							 ]
+							['wire
+							 (if (member 'stem-init (in))
+									 (stem-init)
+									 (if (empty? out) (wire-process)))
+							 ]
+							['stem 
+							 (if (full? (buf cell))
+									 (buffer-process)
+									 )
+							 ]
+							))]
 				 )
 		(if (empty? (in)) 
 				(process-with-input)
