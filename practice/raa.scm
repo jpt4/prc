@@ -37,85 +37,135 @@
    [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
    [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
 
-;;XX STILL OLD UPDATE
+
 (define (update-cell cell-index cell-list)
 	(letrec* ([cell (cell-list-ref cell-list cell-index)]
-				 [in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
-				 [out (list (ao cell) (bo cell) (co cell))]           
-				 [nbra (cell-list-ref cell-list (nba cell))] 
-				 [nbrb (cell-list-ref cell-list (nbb cell))] 
-				 [nbrc (cell-list-ref cell-list (nbc cell))]
-				 [empty? (lambda (c) (equal? '(0 0 0) c))]
-				 [inhale ;gather new input from neighbors' outputs
-					(lambda () 
-						(begin
-							(ai! cell (ao nbra)) (bi! cell (bo nbrb)) (ci! cell (co nbrc))
-							(ao! nbra 0) (bo! nbrb 0) (co! nbrc 0)))] ;clear nbr outputs
-				 [logic-process (lambda () (begin (wire-process) (mem-switch)))]
-				 [wire-process
-					(lambda ()
-						(begin
-							(case (mem cell) ;rotate input right/left, write to output
-								['0 (ao! cell (ci cell)) (bo! cell (ai cell)) ;right
-										(co! cell (bi cell))]
-								['1 (ao! cell (bi cell)) (bo! cell (ci cell)) ;left
-										(co! cell (ai cell))])
-							(ai! cell 0) (bi! cell 0) (ci! cell 0) ;clear inputs
-							(if (equal? (id nba) 'p) 
-									(ao! cell 0))        ;}if any output channels borders the
-							(if (equal? (id nbb) 'p) ;}perimeter immediately dispose of
-									(bo! cell 0))        ;}their outbound values
-							(if (equal? (id nbc) 'p) 
-									(co! cell 0))
-							))]
-				 [buffer-process 
-					(lambda ()
-						(let ([tar (case (list-head (buf cell) 2)
-												 ['(0 0) ao!]
-												 ['(0 1) bo!]
-												 ['(1 0) co!]
-												 ['(1 1) ai!])]
-									[msg (case (list-tail (buf cell) 2)
-												 ['(0 0 0) 'buf-zero]
-												 ['(0 0 1) 'buf-one]
-												 ['(0 1 0) 1]
-												 ['(0 1 1) 'stem-init]
-												 ['(1 0 0) 'wire-r-init]
-												 ['(1 0 1) 'wire-l-init]
-												 ['(1 1 0) 'proc-r-init]
-												 ['(1 1 1) 'proc-l-init])])
-							(tar cell msg)))
-						]
-				 [mem-switch (lambda () (mem! cell (abs (- (mem cell) 1))))]
-				 [stem-init (lambda () (begin (rol! cell 'stem) (clear-channels)))]
-				 [clear-channels 
-					(lambda () (begin (ai! cell 0) (bi! cell 0) (ci! cell 0)
-														(ao! cell 0) (bo! cell 0) (co! cell 0)))]
-				 [full? (lambda (buf) (equal? (length buf) 5))]
-				 [process-with-input
-					(lambda ()
-								(case (rol cell)
-			['proc
-			 (if (member 'stem-init (in))
-					 (stem-init)
-					 (if (empty? out) (logic-process)))
-			 ]
-			['wire
-			 (if (member 'stem-init (in))
-					 (stem-init)
-					 (if (empty? out) (wire-process)))
-			 ]
-			['stem 
-			 (if (full? (buf cell))
-					 (buffer-process)
-					 )
-			 ]
-			))]
-				 )
-		(if (empty? (in)) 
-				(process-with-input)
-				(process-sans-input))
-		cell))
+						[in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
+						[out (list (ao cell) (bo cell) (co cell))]           
+						[nbra (cell-list-ref cell-list (nba cell))] 
+						[nbrb (cell-list-ref cell-list (nbb cell))] 
+						[nbrc (cell-list-ref cell-list (nbc cell))]
+						[standard-signal 1]
+						[max-buffer-length 5]
+						[special-messages 
+						 '(stem-init wire-r-init wire-l-init proc-r-init
+												 proc-l-init write-buf-zero write-buf-one)]					
+						[input-empty? (lambda (c) (equal? '(0 0 0) c))]
+						[inhale ;gather new input from neighbors' outputs
+						 (lambda () 
+							 (begin
+								 (ai! cell (ao nbra)) (bi! cell (bo nbrb)) (ci! cell (co nbrc))
+								 (ao! nbra 0) (bo! nbrb 0) (co! nbrc 0)))] ;clear nbr outputs
+						[update-stem
+						 (lambda ()
+							 (if (buffer-full?)
+									 (buffer-process)
+									 (if (input-empty? (in))
+											 (begin (inhale) (input-process 'a))
+											 (input-process 'a))))]
+						[update-wire
+						 (lambda ()
+							 (begin
+								 (case (mem cell) ;rotate input right/left, write to output
+									 ['0 (ao! cell (ci cell)) (bo! cell (ai cell)) ;right
+											 (co! cell (bi cell))]
+									 ['1 (ao! cell (bi cell)) (bo! cell (ci cell)) ;left
+											 (co! cell (ai cell))])
+								 (ai! cell 0) (bi! cell 0) (ci! cell 0) ;clear inputs
+								 (if (equal? (id nba) 'p) 
+										 (ao! cell 0))        ;}if any output channels borders the
+								 (if (equal? (id nbb) 'p) ;}perimeter immediately dispose of
+										 (bo! cell 0))        ;}their outbound values
+								 (if (equal? (id nbc) 'p) 
+										 (co! cell 0))
+								 ))]
+						[update-proc (lambda () (begin (update-wire) (mem-switch)))]
+						[buffer-full? 
+						 (lambda () (equal? (length (buf cell)) max-buffer-length))]
+						[buffer-process 
+						 (lambda ()
+							 (let ([tar (case (list-head (buf cell) 2)
+														['(0 0) ao!] ;nbr a
+														['(0 1) bo!] ;nbr b
+														['(1 0) co!] ;nbr c
+														['(1 1) ai!])] ;self
+										 [msg (case (list-tail (buf cell) 2)
+														['(0 0 0) 'stem-init]
+														['(0 0 1) 'wire-r-init]
+														['(0 1 0) 'wire-l-init]
+														['(0 1 1) 'proc-r-init]
+														['(1 0 0) 'proc-l-init]
+														['(1 0 1) 'write-buf-zero]
+														['(1 1 0) 'write-buf-one]
+														['(1 1 1) standard-signal])])
+								 (buf! cell '())
+								 (tar cell msg)))
+						 ]
+						[mem-switch (lambda () (mem! cell (abs (- (mem cell) 1))))]
+						[clear-channels 
+						 (lambda () (begin (ai! cell 0) (bi! cell 0) (ci! cell 0)
+															 (ao! cell 0) (bo! cell 0) (co! cell 0)))]
+						[standard-signal? (lambda (s) (equal? standard-signal s))]
+						[special-message? (lambda (m) (member m special-messages))]
+						[input-process
+						 (lambda (chan)
+							 (case chan
+								 ['a (cond
+											[(standard-signal? (car (in))) 
+											 (begin (process-standard-signal 0) (input-process 'b))]
+											[(special-message? (car (in))) 
+											 (begin (process-special-message (car (in))) 
+															(clear-channels))]
+											[else (input-process 'b)])]
+								 ['b (cond
+											[(standard-signal? (cadr (in))) 
+											 (begin (process-standard-signal 1) (input-process 'c))]
+											[(special-message? (cadr (in))) 
+											 (begin (process-special-message (cadr (in))) 
+															(clear-channels))]
+											[else (input-process 'c)])]
+								 ['c (begin
+											 (cond
+												[(standard-signal? (caddr (in))) 
+												 (process-standard-signal 2)]
+												[(special-message? (caddr (in))) 
+												 (process-special-message (caddr (in)))])
+											 (clear-channels))])								 
+							 )]
+						[process-standard-signal
+						 (lambda (chan)
+							 (cond
+								[(equal? (hig cell) chan) (write-buf 1)]
+								[(equal? (low cell) chan) (write-buf 0)]
+								[(equal? (hig cell) '_) (hig! cell chan)]
+								[(equal? (low cell) '_) (low! cell chan)]
+								))]
+						[process-special-message
+						 (lambda (msg)
+							 (case msg
+								 ['stem-init (stem-init)]
+								 ['wire-r-init (wire-init 0)]
+								 ['wire-l-init (wire-init 1)]
+								 ['proc-r-init (proc-init 0)]
+								 ['proc-l-init (proc-init 1)]
+								 ['write-buf-zero (write-buf 0)]
+								 ['write-buf-one (write-buf 1)]))]
+						[stem-init (lambda () (begin (rol! cell 'stem) (mem! cell 0) 
+																				 (clear-channels)))]
+						[wire-init (lambda (m) (begin (rol! cell 'wire) (mem! cell m) 
+																					(clear-channels)))]
+						[proc-init (lambda (m) (begin (rol! cell 'proc) (mem! cell m)
+																					(clear-channels)))]
+						[write-buf (lambda (v) 
+												 (if (not (buffer-full?))
+														 (buf! cell (append (buf cell) (list v)))))]
+						)
+					 (case (rol cell)
+						 ['stem (update-stem)]
+						 ['wire (update-wire)]
+						 ['proc (update-proc)]
+						 )
+					 cell))
 
 ;;cells do not exist outside of a grid
 (define (rlem-hex-grid rows cols)
