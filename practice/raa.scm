@@ -38,6 +38,77 @@
    [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
 
 
+#|
+
+Upon activation, a cell checks its current role.
+
+A wire role cell checks if there exists input to process. If none, it
+scans its neighbors for potential input, emptying their adjacent
+output channels. If still none, the update ends. If input has been
+collected, the input is classified. If input contains a mix of special
+messages and standard signals, or more than one special message, it is
+bad data, all input channels are cleared, and the update ends. If
+input is exactly one special message, it is processed, and the update
+ends. If input is exactly three standard signals, output channels are
+checked. If any output channel is full, the update ends. If all output
+channels are empty, the input is processed, and the update ends.
+
+A proc role cell behaves exactly like a wire role cell, except that
+when processing standard signal input, it additionally flips its
+memory state.
+
+A stem role cell scans for input like a proc or wire cell. If present,
+it processes input in A-, B-, C-channel order.
+
+   (Activation)
+        |
+        |
+        #
+UPDATE-CELL-BEGIN--role=proc/wire--#SCAN-FOR-INPUT--input=empty--+
+        |                                 |                      |
+    role=stem                        input=non-empty             #
+        |                                 |                UPDATE-CELL-END
+        #                                 |                      #    #
+  SCAN-FOR-INPUT--input=empty             #                      |    |
+        |              |            CLASSIFY-INPUT--input=bad----+    |
+   input=non-empty     |                  |      \                    |
+        |              #                  |       +--input=special    |
+        |        UPDATE-CELL-END          |               |           |
+        #                            input=standard       #           |
+  PROCESS-STEM-INPUT                      |          PROCESS-SPECIAL--+
+      /             \                     #                           |
+A-chan=non-empty  A-chan=empty      CHECK-OUTPUT--output=non-empty----+
+      |                                   |                           |
+      #                             output=empty                      |
+PROCESS-A-CHAN                            |                           |
+    /     \                               #                           |
+                                    PROCESS-STANDARD                  |
+                                        /      \                      |
+                                       |    role=wire-----------------+
+                                   role=proc                          |     
+                                       |                              |
+                                       #                              |
+                                    MEM-FLIP--------------------------+
+
+
+                    
+
+SCAN-FOR-INPUT:
+if {ai, bi, ci} = {0, 0, 0}
+then ai <- ao.nbra
+     bi <- bo.nbrb
+     ci <- co.nbrc
+     {ao.nbra, bo.nbrb, co.nbrc} <- {0, 0, 0}
+     if {ai, bi, ci} = {0, 0, 0}
+     then input <- empty
+     else input <- non-empty
+else input <- non-empty
+   
+        
+
+
+|#
+
 (define (update-cell cell-index cell-list)
 	(letrec* ([cell (cell-list-ref cell-list cell-index)]
 						[in (lambda () (list (ai cell) (bi cell) (ci cell)))] ;lazy in
