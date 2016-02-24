@@ -104,7 +104,52 @@ then ai <- ao.nbra
      else input <- non-empty
 else input <- non-empty
    
-        
+
+New Flow Chart
+
+   (Activation)
+        |
+        |
+        #
+UPDATE-CELL-BEGIN
+        |
+        |
+        #
+   CHECK-INPUT-input=empty-#SCAN-FOR-INPUT-input=empty-#UPDATE-CELL-END
+        |                         |                                 #
+ input=non-empty           input=non-empty                          |
+        |                         |                                 |
+        +------------+------------+                                 |
+                     |                                              |
+                     #                                              |
+                CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT-input=bad-+
+                     |                       /         \            |
+                 role=stem                  |      input=special    |                                                
+                     |                      |           |           |
+                     #               input=standard     |           |
+             PROCESS-STEM-INPUT             |           #           |
+                     |                      |       PROCESS-SPECIAL-+
+                     #                      #                       |
+              CLASSIFY-INPUT         PROCESS-STANDARD-role=wire-----+
+                /         \                 |                       |
+               |      input=spcial      role=proc---#MEM-FLIP-------+
+               |           |                                        |
+        input=standard     |                                        |
+               |           #                                        |
+               |      STEM-PROCESS-SPECIAL--------------------------+
+               #                                                    |
+     STEM-PROCESS-STANDARD------------------------------------------+
+
+
+SCAN-FOR-INPUT:
+ai <- ao.nbra
+bi <- bo.nbrb
+ci <- co.nbrc
+{ao.nbra, bo.nbrb, co.nbrc} <- {0, 0, 0}
+if {ai, bi, ci} = {0, 0, 0}
+   then input <- empty
+   else input <- non-empty
+
 
 
 |#
