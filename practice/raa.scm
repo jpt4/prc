@@ -40,72 +40,27 @@
 
 #|
 
-Upon activation, a cell checks its current role.
+Upon activation, a cell checks if there exists input to process. If
+none, it pulls from its neighbors for potential input, emptying their
+adjacent output channels. If still none, the update ends. If input has
+been collected, cell behavior bifurcates on the basis of its current
+role. 
 
-A wire role cell checks if there exists input to process. If none, it
-scans its neighbors for potential input, emptying their adjacent
-output channels. If still none, the update ends. If input has been
-collected, the input is classified. If input contains a mix of special
-messages and standard signals, or more than one special message, it is
-bad data, all input channels are cleared, and the update ends. If
-input is exactly one special message, it is processed, and the update
-ends. If input is exactly three standard signals, output channels are
-checked. If any output channel is full, the update ends. If all output
-channels are empty, the input is processed, and the update ends.
+Wire and proc role cells classify the input. If input is not
+recognizable as special or standard, e.g. by containing a mix of
+special messages and standard signals, or more than one special
+message, it is bad data: all input channels are cleared, and the
+update ends. If input is exactly one special message, the stem-init
+command, the cell adopts the stem role, clears its input and output
+channels, and the update ends. If input is exactly three standard
+signals, output channels are checked. If any output channel is full,
+the update ends. If all output channels are empty, the input is
+transferred from input to output channels according to the subset of
+the cell's RLEM rules governing signal redirection, and the update
+ends. A proc role cell further satisfies the memory update portion of
+the cell's RLEM rules, toggling its memory state.
 
-A proc role cell behaves exactly like a wire role cell, except that
-when processing standard signal input, it additionally flips its
-memory state.
-
-A stem role cell scans for input like a proc or wire cell. If present,
-it processes input in A-, B-, C-channel order.
-
-   (Activation)
-        |
-        |
-        #
-UPDATE-CELL-BEGIN--role=proc/wire--#SCAN-FOR-INPUT--input=empty--+
-        |                                 |                      |
-    role=stem                        input=non-empty             #
-        |                                 |                UPDATE-CELL-END
-        #                                 |                      #    #
-  SCAN-FOR-INPUT--input=empty             #                      |    |
-        |              |            CLASSIFY-INPUT--input=bad----+    |
-   input=non-empty     |                  |      \                    |
-        |              #                  |       +--input=special    |
-        |        UPDATE-CELL-END          |               |           |
-        #                            input=standard       #           |
-  PROCESS-STEM-INPUT                      |          PROCESS-SPECIAL--+
-      /             \                     #                           |
-A-chan=non-empty  A-chan=empty      CHECK-OUTPUT--output=non-empty----+
-      |                                   |                           |
-      #                             output=empty                      |
-PROCESS-A-CHAN                            |                           |
-    /     \                               #                           |
-                                    PROCESS-STANDARD                  |
-                                        /      \                      |
-                                       |    role=wire-----------------+
-                                   role=proc                          |     
-                                       |                              |
-                                       #                              |
-                                    MEM-FLIP--------------------------+
-
-
-                    
-
-SCAN-FOR-INPUT:
-if {ai, bi, ci} = {0, 0, 0}
-then ai <- ao.nbra
-     bi <- bo.nbrb
-     ci <- co.nbrc
-     {ao.nbra, bo.nbrb, co.nbrc} <- {0, 0, 0}
-     if {ai, bi, ci} = {0, 0, 0}
-     then input <- empty
-     else input <- non-empty
-else input <- non-empty
-   
-
-New Flow Chart
+A stem role cell classifies the input. 
 
    (Activation)
         |
@@ -115,24 +70,25 @@ UPDATE-CELL-BEGIN
         |
         |
         #
-   CHECK-INPUT-input=empty-#SCAN-FOR-INPUT-input=empty-#UPDATE-CELL-END
+   CHECK-INPUT-input=empty-#PULL-FOR-INPUT-input=empty-#UPDATE-CELL-END
         |                         |                                 #
- input=non-empty           input=non-empty                          |
         |                         |                                 |
-        +------------+------------+                                 |
-                     |                                              |
-                     #                                              |
-                CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT-input=bad-+
+ input=non-empty           input=non-empty            PROCESS-BAD---+
+        |                         |                       #         |
+        +------------+------------+                      /          |
+                     |                              input=bad       |
+                     #                                 /            |
+                CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT           |
                      |                       /         \            |
-                 role=stem                  |      input=special    |                                                
+                 role=stem                  |      input=special    |
                      |                      |           |           |
                      #               input=standard     |           |
-             PROCESS-STEM-INPUT             |           #           |
+             STEM-PROCESS-INPUT             |           #           |
                      |                      |       PROCESS-SPECIAL-+
                      #                      #                       |
-              CLASSIFY-INPUT         PROCESS-STANDARD-role=wire-----+
+             STEM-CLASSIFY-INPUT     PROCESS-STANDARD-role=wire-----+
                 /         \                 |                       |
-               |      input=spcial      role=proc---#MEM-FLIP-------+
+               |      input=special     role=proc---#MEM-FLIP-------+
                |           |                                        |
         input=standard     |                                        |
                |           #                                        |
@@ -141,7 +97,7 @@ UPDATE-CELL-BEGIN
      STEM-PROCESS-STANDARD------------------------------------------+
 
 
-SCAN-FOR-INPUT:
+PULL-FOR-INPUT:
 ai <- ao.nbra
 bi <- bo.nbrb
 ci <- co.nbrc
@@ -149,6 +105,16 @@ ci <- co.nbrc
 if {ai, bi, ci} = {0, 0, 0}
    then input <- empty
    else input <- non-empty
+
+CLASSIFY-INPUT:
+standard = {0, 1} x {0, 1} x {0, 1}
+special = {0, 0, stem-init} | {0, stem-init, 0} | {stem-init, 0, 0}
+bad = {not(standard | special)}
+
+input = case {ai, bi, ci}
+             standard => standard
+             special  => special
+             bad      => bad
 
 
 
