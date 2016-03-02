@@ -1,0 +1,14 @@
+UTC20160229
+J: name
+H: name
+
+J: We are the cofounders of Autark, a company for pervasively reconfigurable computing hardware or as we call it, PRC.
+
+H: PRC is an asynchronous, homogenous, and reversible computing substrate, with explicit entropy management.
+
+J: PRC exposes partial dynamic reconfigurablility to the programmer at a finer degree of granularity than FPGAs. Every layer of the stack is open to formal
+reasoning and performance optimization.
+
+H: This is a long term project that unifies many previous paradigms, and we want YCombinator to be a part of our vision.
+
+J: Be certain to stalk our GitHub for updates to this project.

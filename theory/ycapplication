@@ -1,0 +1,65 @@
+Describe your company in 50 characters or less.
+We build computronium.
+
+What is your company going to make?
+
+Pervasively reconfigurable computing (PRC) hardware and its attendant
+software stack. PRC formally specifies an asynchronous, logically
+reversible, reconfigurable foundation for computing systems. PRC
+hardware is composed of a homogenous matrix of bitwise processors,
+each capable of executing a restricted set of logic, routing, and
+reconfiguration operations. Our software will allow programmers to
+take advantage of this fine-grained semantic resolution, to reason in
+a unified manner about the behavior of their code from the bare metal
+upwards, and modify any layer of the supporting architecture.
+
+Why this idea? Existing domain expertise? How do you know there is a
+need?
+
+PRC is the organic culmination of our interests in high level
+architectures (e.g. LISP machines, Burroughs Large Systems),
+self-modifiable artificial intelligences, and the desire for a totemic
+computing platform over which the operator has sovereign control, unto
+its most basic components.
+
+How novel? What currently substitutes?
+
+Competitors? Fear?
+
+Altera (and thus Intel), Xilinx, and the FPGA/soft IP core industry in
+general are our most direct competitors. However, our greatest fear is
+a materials science advance that resumes pre-2005 iterations in
+Moore's Law for conventional CPUs before PRC harware enters the
+market. Whether RISC versus CISC in the early '90s, the Transputer and
+other asynchronous machines versus sychronous clocked microprocessors
+in the '80s, or cryotronics versus silicon ICs in the '60s, ten
+billion dollars worth of muscle dedicated to known processes can
+overwhelm the structural advantages of alternative architectures. At
+present, the Hz/Watt/$ ratio is in a trough where PRC can establish
+itself, then reap the benefits of e.g. graphene, 3D-transistors, or
+quantum advances in step with the rest of the industry.
+
+Understand that others don't?
+
+We recognize that the market exists. To our knowledge, no other
+company is currently pursuing the mix of technologies that Autark is
+with PRC. Theseus Logic is no longer developing their Null Convention
+Logic asynchronous systems, which were neither reconfigurable nor
+reversible. Tabula, employer of Conal Elliott, has done work towards
+compiling high level symbolic languages to Boolean logic circuits, but
+targets FPGAs. MIT's Center for Bits and Atoms patented their
+Reconfigurable Asynchronous Logic Automata architecture (which is an
+acknowledged influence on PRC), but did no further exploration into
+reversible or non-Boolean logic.
+
+The audience for fine grained reconfigurable, reversible,
+asynchronous, formally defined hardware is not served at present, and
+likely will not be in the absence of Autark.
+
+Revenue streams/potential max?
+
+Get users?
+
+Surprising/amusing discovery.
+
+Why YC?
