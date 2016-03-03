@@ -18,11 +18,33 @@ need?
 
 PRC is the organic culmination of our interests in high level
 architectures (e.g. LISP machines, Burroughs Large Systems),
-self-modifiable artificial intelligences, and the desire for a totemic
-computing platform over which the operator has sovereign control, unto
-its most basic components.
+non-Boolean digital logics, self-modifiable artificial intelligences,
+and the desire for a totemic computing platform over which the
+operator has sovereign control, unto its most basic components.
+
+We have extensive experience with functional programming and the
+theory behind digital circuitry, but not in its manufacture.
+
+No abstraction is perfectly hygienic; modern software development has
+increasingly become a co-ordination of interacting components whose
+sum resists comprehension, and thus analysis when the guarantees of an
+interface are not kept. Difficult problems need a medium for their
+solution that does not conceal any layer from audit, and always offers
+the possibility of complete de novo construction.
 
 How novel? What currently substitutes?
+
+No other computing hardware, to the limits of our research, has
+provided the blend of technologies PRC does. Thus, no products have
+been built that employ the advantages PRC offers. Reconfigurability
+and asynchrony are largely features of software, not hardware. Logical
+reversibility is a property of only a few debugging systems, again in
+software. Because end users can not inspect and modify the hardware
+they rely on from OEMs, they either grow large enough to commission
+their own (e.g. Google's custom datacenter servers and their
+acquisition of Motorola), or stay small enough that homebrew solutions
+are sufficient (every hacker who built their own 8/16 bit computer
+from scratch).
 
 Competitors? Fear?
 
@@ -45,12 +67,12 @@ We recognize that the market exists. To our knowledge, no other
 company is currently pursuing the mix of technologies that Autark is
 with PRC. Theseus Logic is no longer developing their Null Convention
 Logic asynchronous systems, which were neither reconfigurable nor
-reversible. Tabula, employer of Conal Elliott, has done work towards
-compiling high level symbolic languages to Boolean logic circuits, but
-targets FPGAs. MIT's Center for Bits and Atoms patented their
-Reconfigurable Asynchronous Logic Automata architecture (which is an
-acknowledged influence on PRC), but did no further exploration into
-reversible or non-Boolean logic.
+reversible. Tabula, now defunct, worked towards compiling high level
+symbolic languages to Boolean logic circuits, but targeted
+FPGAs. MIT's Center for Bits and Atoms patented their Reconfigurable
+Asynchronous Logic Automata architecture (which is an acknowledged
+influence on PRC), but did no further exploration into reversible or
+non-Boolean logic.
 
 The audience for fine grained reconfigurable, reversible,
 asynchronous, formally defined hardware is not served at present, and
@@ -58,8 +80,40 @@ likely will not be in the absence of Autark.
 
 Revenue streams/potential max?
 
+Autark will sell PRC hardware and software, as well as consult for
+specific clients on its application.
+
+A mature Autark would be Xilinx-scale in terms of revenue,
+approximately 2.5 billion USD per year, both through partial capture
+of the FPGA and CPU spaces, and the novel market for PRC hardware.
+
 Get users?
+
+Initially, by appealing to that mass of the software engineering
+community that pines for the Commodore 64 age when a computer could be
+comprehended, or at least inspected, in its totality. Wherever LISP
+and SmallTalk machines are discussed nostagically, the potential for
+PRC hardware, even in toy form, is high. This would cultivate a high
+quality userbase for further refinement and market research into
+specific applications until Autark can produce Intel-grade machines.
 
 Surprising/amusing discovery.
 
-Why YC?
+InstaMorph (thermoset moldable plastic) is not a suitable model rocket
+nosecone material - it will very quickly turn your KNO3 and sugar
+powered rocket into a KNO3 and sugar powered recoilless rifle.
+
+Why YC?  
+
+Y Combinator has demonstrated a vision of its influence on the future
+more nuanced than that of the stereotypical venture capital
+firm. While remaining intensely profit focused, it is obvious through
+the words and deeds surrounding YC Fellowship, YC Research, and OpenAI
+that the minds behind Y Combinator are willing to support endeavors
+that derive their high risk/reward profile because they are bets on
+technological advancements, not merely business execution.
+
+Autark necessarily hinges on our ability to figure out how to build,
+and build upon, PRC hardware. Y Combinator is one of the few
+accelerators we know of able to understand and willing to accept this
+variety of risk.
