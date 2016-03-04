@@ -62,6 +62,41 @@ the cell's RLEM rules, toggling its memory state.
 
 A stem role cell classifies the input. 
 
+
+Two means of wire/proc to stem communication:
+
+Constant time/number of signals, 5 bit command buffer:
+If none is currently specified, a standard signal of exactly one high
+value sets the A (001), B (010), or C (100) channel as the high
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as a appending a "1" to the command buffer or 2)
+if different, as appending a "0" to the command buffer.
+
+Variable time/signal count, 5 bit command counter:
+If none is specified, a standard signal of exactly one high value sets
+the A (001), B (010), or C (100) channel as the command selection
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as incrementing the command counter by 1, or 2)
+instructing the cell to cease accepting input and execute the command
+indicated by the counter.
+
+Counter value:
+0 - 6: target self, (stem-init wire-r-init wire-l-init proc-r-init
+												 proc-l-init write-buf-zero write-buf-one)
+
+7 - 13: target A, (stem-init wire-r-init wire-l-init proc-r-init
+												 proc-l-init write-buf-zero write-buf-one)
+
+14 - 20: target B, (stem-init wire-r-init wire-l-init proc-r-init
+												 proc-l-init write-buf-zero write-buf-one)
+
+21 - 26: target C, (stem-init wire-r-init wire-l-init proc-r-init
+												 proc-l-init write-buf-zero write-buf-one)
+
    (Activation)
         |
         |
