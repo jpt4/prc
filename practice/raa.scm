@@ -81,21 +81,25 @@ rail. This property is set and the input consumed without modifying
 the command buffer. Any subsequent standard signal of exactly one high
 value is then interpreted either 1) if identical to the high rail
 designation signal, as incrementing the command counter by 1, or 2)
-instructing the cell to cease accepting input and execute the command
-indicated by the counter.
 
-Counter value:
-0 - 6: target self, (stem-init wire-r-init wire-l-init proc-r-init
-												 proc-l-init write-buf-zero write-buf-one)
+Counter value: 
 
-7 - 13: target A, (stem-init wire-r-init wire-l-init proc-r-init
-												 proc-l-init write-buf-zero write-buf-one)
-
-14 - 20: target B, (stem-init wire-r-init wire-l-init proc-r-init
-												 proc-l-init write-buf-zero write-buf-one)
-
-21 - 26: target C, (stem-init wire-r-init wire-l-init proc-r-init
-												 proc-l-init write-buf-zero write-buf-one)
+0 - 7: 
+target: self
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+8 - 15: 
+target: A neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+16 - 23: 
+target: B neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+24 - 31: 
+target: C neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
 
    (Activation)
         |
@@ -122,13 +126,13 @@ UPDATE-CELL-BEGIN
                      |                      |       PROCESS-SPECIAL-+
                      #                      #                       |
              STEM-CLASSIFY-INPUT     PROCESS-STANDARD-role=wire-----+
-                /         \                 |                       |
-               |      input=special     role=proc---#MEM-FLIP-------+
-               |           |                                        |
-        input=standard     |                                        |
-               |           #                                        |
-               |      STEM-PROCESS-SPECIAL--------------------------+
-               #                                                    |
+            /        |          \           |                       |
+           |    input=special    |      role=proc---#MEM-FLIP-------+
+           |         |           |                                  |
+      input=standard |       input=bad--#PROCESS-BAD----------------+
+           |         #                                              |
+           |   STEM-PROCESS-SPECIAL---------------------------------+
+           #                                                        |
      STEM-PROCESS-STANDARD------------------------------------------+
 
 
