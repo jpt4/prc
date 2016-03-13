@@ -4,47 +4,15 @@
 ;;UTC20160308
 ;;Guile Scheme v2.2
 
-;;universal cell core state
-(define (uc-core rol mem ai bi ci ao bo co hig buf)
-  (define state (list rol mem ai bi ci ao bo co hig buf))
-  (define (self msg . arg)
-    (case msg
-      [(state?) state] [(rol?) (list-ref state 0)] [(mem?) (list-ref state 1)]
-      [(ai?) (list-ref state 2)] [(bi?) (list-ref state 3)] 
-      [(ci?) (list-ref state 4)] 
-      [(ao?) (list-ref state 5)] [(bo?) (list-ref state bo] [(co?) co]
-      [(hig?) hig] [(buf?) buf]
-      [(state!) (set! state (car arg))] [(rol!) (list-set! state 0 (car arg))]
-      [(mem!) (list-set! state 1 (car arg))
-      ))
-  self
-)
-
-;;functional equivalents
-(define (mk-uc-core rol mem ai bi ci ao bo co hig buf)
-  (list rol mem ai bi ci ao bo co hig buf))
-
-
-;;universal cell with rlem 3-453 behavior
-(define (uc-3453 rol mem ai bi ci ao bo co hig buf)
-  (define core-state (uc-core rol mem ai bi ci ao bo co hig buf))
-  (define (self msg . arg)
-    (cond
-     [(member msg '(state? rol? mem? ai? bi? ci? ao? bo? co? hig? buf? 
-                    state! rol! mem! ai! bi! ci! ao! bo! co! hig! buf!))
-      (core-state msg . arg)]
-      ))
-  self
-)  
-
-;;constants
+;;;constants
 (define standard-signal 1)
 (define max-buffer-length 5)
 (define special-messages 
   '(stem-init wire-r-init wire-l-init proc-r-init proc-l-init write-buf-zero
               write-buf-one))
+(define uc-core-prototype (list 'rol 'mem 'ai 'bi 'ci 'ao 'bo 'co 'hig 'buf))
 
-;;utilities
+;;;utilities
 (define (cell-list-ref cell-list index) 
   (if (equal? index 'p) 
       (car cell-list)
@@ -53,6 +21,44 @@
   (cond
    [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
    [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
+;;f((a ...) (b ...)) = (((a b) (a ...)) (... b) (... ...))
+(define (cartesian-product lsa lsb)
+  (map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
+
+(define (unpack ls acc)
+  (cond
+   [(null? ls) (reverse acc)]
+   [(and (pair? (car ls)) (not (null? (cdar ls))))
+    (unpack (cons (cdar ls) (cdr ls)) (cons (caar ls) acc))]
+   [(and (pair? (car ls)) (null? (cdar ls)))
+    (unpack (cdr ls) (cons (caar ls) acc))]
+   [else (cons (car ls) (unpack (cdr ls) acc))]))
+;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
+;; Similar to SRFI 1's fold
+(define (fold1 kons knil lst)
+  (if (null? lst)
+      knil
+      (fold1 kons (kons (car lst) knil) (cdr lst))))
+;; Same as R5RS's reverse
+(define (reverse lst)
+  (fold1 cons '() lst))
+(define (reverse-flatten-into x lst)
+  (if (pair? x)
+      (fold1 reverse-flatten-into lst x)
+      (cons x lst)))
+
+(define (deep-flatten lst)
+    (reverse (reverse-flatten-into lst '())))
+
+#|sophisticated flatten: 
+unpack n layers deep, * if unspecified
+do/not preserve unpacked '() elements <-- via preprocess tagging?          
+|#
+
+(define (zip lsa lsb)
+  (map (lambda (e) (list (list-ref lsa e)
+                         (list-ref lsb e)))
+       (iota (length lsa))))
 
 ;;directions
 (define (west-index i) (- i 1))
@@ -62,16 +68,103 @@
 (define (north-west-index i cols) (- (+ i cols) 1))
 (define (south-east-index i cols) (+ (- i cols) 1))
 
-#|
-(define (matrix size type)
-  (cell-list))
+;;;hex-grid
+(define (mk-hex-node id neighbor-list cell)
+  (list id (cdr (assq id neighbor-list)) cell))
+(define (mk-hex-neighbor-list rows cols)
+  (let ([grid (unpack (cartesian-product (iota rows) (iota cols)) '())])
+    (map
+     (lambda (e)
+       (let* ([r (car e)] [c (cadr e)] [i (+ (* r cols) c)])
+         (cond
+          [(even? c) ;point in even column?
+           (list i 
+                 (if (zero? c) 'p (west-index i)) ;left column?
+                 (if (or (zero? r) (equal? c (- cols 1))) ;bottom row/ 
+                     'p                                  ;right column?
+                     (south-east-index i cols))
+                 (if (equal? c (- cols 1)) ;right-most column?
+                     'p 
+                     (north-east-index i)))]
+          [(odd? c) ;point in odd column?
+           (list i 
+                 (if (equal? c (- cols 1)) ;right-most column?
+                     'p
+                     (east-index i))
+                 (if (equal? r (- rows 1)) ;upper row?
+                     'p
+                     (north-west-index i cols))
+                 (south-west-index i))])))
+     grid)))
+(define (mk-hex-grid rows cols default-cell perimeter-cell)
+  (let* ([nbrls (mk-hex-neighbor-list rows cols)]
+         [p (list 'p '(_ _ _) perimeter-cell)]
+         [base (cons p (map (lambda (i) (mk-hex-node i nbrls default-cell))
+                            (iota (* rows cols))))])
+    base))
 
-(define (update-cell cell-id matrix)
-  (let ([cell (cell-list-ref cell-id matrix)]
-        [nbra (
-        
-|#
+;;;functional
+(define (mk-uc-core rol mem ai bi ci ao bo co hig buf)
+  (list rol mem ai bi ci ao bo co hig buf))
+(define (peek-state sta elm)
+  (if (eq? elm 'state)
+      sta
+      (let ([splice (list-index uc-core-prototype elm)])
+        (list-ref sta splice))))
+(define (poke-state ost elm nst) 
+  (if (eq? elm 'state) 
+      nst
+      (let ([splice (list-index uc-core-prototype elm)])
+        (append (list-head ost splice)
+                (list nst)
+                (list-tail ost (+ 1 splice))))))
 
-;;test suite
-(define defaultcore (uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
-(define tstcore defaultcore)
+;;;universal cell core
+(define (uc-core rol mem ai bi ci ao bo co hig buf)
+  (define state (mk-uc-core rol mem ai bi ci ao bo co hig buf))
+  (define (obj-peek-state elm) (peek-state state elm))
+  (define (obj-poke-state elm nst) (set! state (poke-state state elm nst)))
+  (define (self msg . arg)
+    (case msg
+      [(?) (obj-peek-state (car arg))]
+      [(!) (obj-poke-state (car arg) (cadr arg))]
+      [else (list msg arg)]
+      ))
+  self
+)
+
+;;;universal cell with rlem 3-453 behavior
+(define (uc-3453 rol mem ai bi ci ao bo co hig buf)
+  (define cell-core (uc-core rol mem ai bi ci ao bo co hig buf))
+  (define (self msg . arg)
+    (cond
+     [(member msg '(! ?)) (cell-core (list msg arg))]
+     [else (list msg arg)]
+     ))
+  self
+  )
+
+;;;lattice
+(define (hex-lattice rows cols default perimeter)
+  (define grid (mk-hex-grid rows cols default perimeter))
+  (define (self msg . arg)
+    (case msg
+      [(print) 
+       (dispnl* (map (lambda (c) 
+                       (list (car c) (cadr c) ((caddr c) '? 'state))) grid))]
+      [else (list msg arg)]
+      ))
+  self
+  )
+
+;;;defaults
+(define default-core-obj (uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
+(define default-core-perim-obj 
+  (uc-core 'perim 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
+(define default-core-fun 
+  (mk-uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
+(define default-lat (hex-lattice 4 5 default-core-obj default-core-perim-obj))
+                       
+
+;;;test suite
+(define tst-core-obj default-core-obj)
