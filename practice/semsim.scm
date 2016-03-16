@@ -118,6 +118,16 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
         (append (list-head ost splice)
                 (list nst)
                 (list-tail ost (+ 1 splice))))))
+(define (nbr-a id cls)
+  (list-ref (cadr (cell-list-ref cls id)) 0))
+(define (nbr-b id cls)
+  (list-ref (cadr (cell-list-ref cls id)) 1))
+(define (nbr-c id cls)
+  (list-ref (cadr (cell-list-ref cls id)) 2))
+#|
+(define (update-3453-cell id cls)
+  (let* ([nba
+|#
 
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
@@ -161,10 +171,12 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define default-core-obj (uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
 (define default-core-perim-obj 
   (uc-core 'perim 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
+(define default-core-perim-fun 
+  (mk-uc-core 'perim 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
 (define default-core-fun 
   (mk-uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
-(define default-lat (hex-lattice 4 5 default-core-obj default-core-perim-obj))
-                       
-
+(define default-lat-fun (mk-hex-grid 4 5 default-core-fun default-core-perim-fun))
+(define default-lat-obj (hex-lattice 4 5 default-core-obj default-core-perim-obj))
 ;;;test suite
 (define tst-core-obj default-core-obj)
+ 
