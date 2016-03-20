@@ -118,16 +118,49 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
         (append (list-head ost splice)
                 (list nst)
                 (list-tail ost (+ 1 splice))))))
-(define (nbr-a id cls)
+(define (nbra-id id cls)
   (list-ref (cadr (cell-list-ref cls id)) 0))
-(define (nbr-b id cls)
+(define (nbrb-id id cls)
   (list-ref (cadr (cell-list-ref cls id)) 1))
-(define (nbr-c id cls)
+(define (nbrc-id id cls)
   (list-ref (cadr (cell-list-ref cls id)) 2))
+
+(define (check-input id cls)
+  (let* ([cell (cell-list-ref cls id)]
+         [input (list (peek-state cell 'ai) (peek-state cell 'bi) 
+                      (peek-state cell 'ci))])
+    (if (equal? '(0 0 0) input)
+        (pull-for-input id cls)
+        (check-role id cls))))
+
+(define (check-role id cls)
+  (let* ([cell (cell-list-ref cls id)]
+         [role (peek-state cell 'rol)])
+    (cond
+     [(or (equal? 'proc role) (equal? 'wire role)) (classify-input id cls)]
+     [(equal? 'stem role) (stem-process-input)])))
+
+(define (pull-for-input id cls)
+  (let* ([cell (cell-list-ref cls id)]
+         [nbra (cell-list-ref cls (nbra-id id cls))] 
+         [nbrb (cell-list-ref cls (nbrb-id id cls))]
+         [nbrc (cell-list-ref cls (nbrc-id id cls))]
+         [nbra-ao (peek-state nbra 'ao)]
+         [nbrb-bo (peek-state nbrb 'bo)]
+         [nbrc-co (peek-state nbrc 'co)]
+         [input (list nbra-ao nbrb-bo nbrc-co)])
+    
+    
+
+
+
 #|
-(define (update-3453-cell id cls)
-  (let* ([nba
-|#
+(define (process-standard-signal id cls)
+  (let* ([nba (cell-list-ref cls (nbra-id id cls))]
+         [nbb (cell-list-ref cls (nbrb-id id cls))]
+         [nbc (cell-list-ref cls (nbrc-id id cls))])
+  |#  
+    
 
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
