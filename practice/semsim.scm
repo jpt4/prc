@@ -17,6 +17,12 @@
   (if (equal? index 'p) 
       (car cell-list)
       (list-ref (cdr cell-list) index)))
+(define (cell-meta-data cid cls)
+  (list-head (cell-list-ref cls cid) 2))
+(define (cell-list-head cls cid)
+  (list-head cls (if (equal? cid 'p) 1 (+ 1 cid))))
+(define (cell-list-tail cls cid)
+  (list-tail cls (if (equal? cid 'p) 1 (+ 1 cid))))
 (define (dispnl* txt . res)
   (cond
    [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
@@ -35,16 +41,16 @@
    [else (cons (car ls) (unpack (cdr ls) acc))]))
 ;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
 ;; Similar to SRFI 1's fold
-(define (fold1 kons knil lst)
+(define (foldr kons knil lst)
   (if (null? lst)
       knil
-      (fold1 kons (kons (car lst) knil) (cdr lst))))
+      (foldr kons (kons (car lst) knil) (cdr lst))))
 ;; Same as R5RS's reverse
 (define (reverse lst)
-  (fold1 cons '() lst))
+  (foldr cons '() lst))
 (define (reverse-flatten-into x lst)
   (if (pair? x)
-      (fold1 reverse-flatten-into lst x)
+      (foldr reverse-flatten-into lst x)
       (cons x lst)))
 
 (define (deep-flatten lst)
@@ -106,67 +112,105 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 ;;;functional
 (define (mk-uc-core rol mem ai bi ci ao bo co hig buf)
   (list rol mem ai bi ci ao bo co hig buf))
-(define (peek-state sta elm)
+(define (cell-peek-state sta elm)
   (if (eq? elm 'state)
       sta
       (let ([splice (list-index uc-core-prototype elm)])
         (list-ref sta splice))))
-(define (poke-state ost elm nst) 
+(define (cell-poke-state ost elm nst) 
   (if (eq? elm 'state) 
       nst
       (let ([splice (list-index uc-core-prototype elm)])
         (append (list-head ost splice)
                 (list nst)
                 (list-tail ost (+ 1 splice))))))
-(define (nbra-id id cls)
-  (list-ref (cadr (cell-list-ref cls id)) 0))
-(define (nbrb-id id cls)
-  (list-ref (cadr (cell-list-ref cls id)) 1))
-(define (nbrc-id id cls)
-  (list-ref (cadr (cell-list-ref cls id)) 2))
+;old cell list, cell id, replacement cell value
+(define (cell-list-poke-state ols cid ncl)
+  (list (cell-list-head ols cid) 
+        (cons (cell-meta-data cid ols) (list ncl))
+        (cell-list-tail ols (+ 1 cid))))
+
+(define (cell-input cell) 
+  (list (cell-peek-state cell 'ai) 
+        (cell-peek-state cell 'bi) 
+        (cell-peek-state cell 'ci)))
+        
+(define (nbra-id id cls) (list-ref (cadr (cell-list-ref cls id)) 0))
+(define (nbrb-id id cls) (list-ref (cadr (cell-list-ref cls id)) 1))
+(define (nbrc-id id cls) (list-ref (cadr (cell-list-ref cls id)) 2))
+(define (nbra-cell id cls) (cell-list-ref cls (nbra-id id cls)))
+(define (nbrb-cell id cls) (cell-list-ref cls (nbrb-id id cls)))
+(define (nbrc-cell id cls) (cell-list-ref cls (nbrc-id id cls))) 
+
+;;input identification predicates
+(define (zeroed? in) (foldr (lambda (e k) (and (zero? e) k)) #t in))
+(define (standard? in) 
+  (foldr (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in))
+(define (special? in) (member in special-messages))
+(define (bad? in) (not (or (standard? in) (special? in))))
+
+(define (end-cell-update cid cls) cls)
 
 (define (check-input id cls)
   (let* ([cell (cell-list-ref cls id)]
-         [input (list (peek-state cell 'ai) (peek-state cell 'bi) 
-                      (peek-state cell 'ci))])
-    (if (equal? '(0 0 0) input)
+         [input (list (cell-peek-state cell 'ai) (cell-peek-state cell 'bi) 
+                      (cell-peek-state cell 'ci))])
+    (if (zeroed? input)
         (pull-for-input id cls)
         (check-role id cls))))
 
 (define (check-role id cls)
   (let* ([cell (cell-list-ref cls id)]
-         [role (peek-state cell 'rol)])
+         [role (cell-peek-state cell 'rol)])
     (cond
      [(or (equal? 'proc role) (equal? 'wire role)) (classify-input id cls)]
      [(equal? 'stem role) (stem-process-input)])))
 
-(define (pull-for-input id cls)
-  (let* ([cell (cell-list-ref cls id)]
-         [nbra (cell-list-ref cls (nbra-id id cls))] 
-         [nbrb (cell-list-ref cls (nbrb-id id cls))]
-         [nbrc (cell-list-ref cls (nbrc-id id cls))]
-         [nbra-ao (peek-state nbra 'ao)]
-         [nbrb-bo (peek-state nbrb 'bo)]
-         [nbrc-co (peek-state nbrc 'co)]
+(define (pull-for-input cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
+         [nbra-ao (cell-peek-state (nbra-cell cid cls) 'ao)] 
+         [nbrb-bo (cell-peek-state (nbrb-cell cid cls) 'bo)]
+         [nbrc-co (cell-peek-state (nbrc-cell cid cls) 'co)]
          [input (list nbra-ao nbrb-bo nbrc-co)])
-    
-    
+    (cond
+     [(zeroed? input) (end-cell-update cid cls)]
+     [(not (zeroed? input)) 
+      (let* ([new-cl (cell-poke-state 
+                      (cell-poke-state 
+                       (cell-poke-state cell 'ai nbra-ao) 
+                       'bi nbrb-bo) 
+                      'ci nbrc-co)]
+             [new-cls (cell-list-poke-state
+                       (cell-list-poke-state 
+                        (cell-list-poke-state
+                         (cell-list-poke-state cls cid new-cl) 
+                         (nbra-id cid cls) 
+                         (cell-poke-state (nbra-cell cid cls) 'ao 0))
+                        (nbrb-id cid cls)
+                        (cell-poke-state (nbrb-cell cid cls) 'bo 0))
+                       (nbrc-id cid cls)
+                       (cell-poke-state (nbrc-cell cid cls) 'co 0))])
+        (check-role cid new-cls))])))
 
-
+(define (classify-input cid cls)
+  (let* ([cell (cell-list-ref cid cls)]
+         [input (cell-input cell)])
+    (cond
+     [(standard? input) (process-standard-signal cid cls)]
+     [(special? input) (process-special-message cid cls)]
+     [(bad? input) (process-bad-input cid cls)])))
 
 #|
-(define (process-standard-signal id cls)
-  (let* ([nba (cell-list-ref cls (nbra-id id cls))]
-         [nbb (cell-list-ref cls (nbrb-id id cls))]
-         [nbc (cell-list-ref cls (nbrc-id id cls))])
-  |#  
-    
+(define (process-standard-signal cid cls)
+  (let* ([cell)
+|#
 
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
   (define state (mk-uc-core rol mem ai bi ci ao bo co hig buf))
-  (define (obj-peek-state elm) (peek-state state elm))
-  (define (obj-poke-state elm nst) (set! state (poke-state state elm nst)))
+  (define (obj-peek-state elm) (cell-peek-state state elm))
+  (define (obj-poke-state elm nst) 
+    (set! state (cell-poke-state state elm nst)))
   (define (self msg . arg)
     (case msg
       [(?) (obj-peek-state (car arg))]
