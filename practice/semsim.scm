@@ -23,6 +23,7 @@
   (list-head cls (if (equal? cid 'p) 1 (+ 1 cid))))
 (define (cell-list-tail cls cid)
   (list-tail cls (if (equal? cid 'p) 1 (+ 1 cid))))
+(define (pair a b) (list a b))
 (define (dispnl* txt . res)
   (cond
    [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
@@ -134,6 +135,15 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   (list (cell-peek-state cell 'ai) 
         (cell-peek-state cell 'bi) 
         (cell-peek-state cell 'ci)))
+;;original cell, list of (state value) pairs to poke
+(define (cell-multi-poke ocl pls)
+  (foldr (lambda (poke cell) (cell-poke-state cell (car poke) (cadr poke)))
+         ocl pls))
+;;original cell list, list of (id new-entry) pairs to poke
+(define (cell-list-multi-poke ols pls)
+  (foldr 
+   (lambda (poke clst) (cell-list-poke-state clst (car poke) (cadr poke)))
+   ols pls))
         
 (define (nbra-id id cls) (list-ref (cadr (cell-list-ref cls id)) 0))
 (define (nbrb-id id cls) (list-ref (cadr (cell-list-ref cls id)) 1))
@@ -142,7 +152,7 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define (nbrb-cell id cls) (cell-list-ref cls (nbrb-id id cls)))
 (define (nbrc-cell id cls) (cell-list-ref cls (nbrc-id id cls))) 
 
-;;input identification predicates
+;;input classification predicates
 (define (zeroed? in) (foldr (lambda (e k) (and (zero? e) k)) #t in))
 (define (standard? in) 
   (foldr (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in))
@@ -175,21 +185,20 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
     (cond
      [(zeroed? input) (end-cell-update cid cls)]
      [(not (zeroed? input)) 
-      (let* ([new-cl (cell-poke-state 
-                      (cell-poke-state 
-                       (cell-poke-state cell 'ai nbra-ao) 
-                       'bi nbrb-bo) 
-                      'ci nbrc-co)]
-             [new-cls (cell-list-poke-state
-                       (cell-list-poke-state 
-                        (cell-list-poke-state
-                         (cell-list-poke-state cls cid new-cl) 
-                         (nbra-id cid cls) 
-                         (cell-poke-state (nbra-cell cid cls) 'ao 0))
-                        (nbrb-id cid cls)
-                        (cell-poke-state (nbrb-cell cid cls) 'bo 0))
-                       (nbrc-id cid cls)
-                       (cell-poke-state (nbrc-cell cid cls) 'co 0))])
+      (let* ([new-cl 
+              (cell-multi-poke cell (list (pair 'ai nbra-ao)
+                                          (pair 'bi nbrb-bo)
+                                          (pair 'ci nbrc-co)))]
+             [new-cls 
+              (cell-list-multi-poke 
+               cls 
+               (list (pair cid new-cl)
+                     (pair (nbra-id cid cls) 
+                           (cell-poke-state (nbra-cell cid cls) 'ao 0))
+                     (pair (nbrb-id cid cls) 
+                           (cell-poke-state (nbrb-cell cid cls) 'bo 0))
+                     (pair (nbrc-id cid cls) 
+                           (cell-poke-state (nbrc-cell cid cls) 'co 0))))])
         (check-role cid new-cls))])))
 
 (define (classify-input cid cls)
@@ -202,8 +211,10 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 
 #|
 (define (process-standard-signal cid cls)
-  (let* ([cell)
-|#
+  (let* ([cell (cell-list-ref cls cid)]
+         [input (cell-input cell)])
+  |#  
+
 
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
