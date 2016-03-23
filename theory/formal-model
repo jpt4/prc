@@ -40,11 +40,121 @@ SIG := set of input symbols
 GAM := set of output symbols
 DEL := transition function
 
-Q = ROLE x HILO x BUF x MEM, s.t. if HILO and BUFR =/= {}, then ROLE =
-                                  stem.
+Cell Activation Flowchart:
 
-ROLE = {stem, rlem, wire} 
+Upon activation, a cell checks if there exists input to process. If
+none, it pulls from its neighbors for potential input, emptying their
+adjacent output channels. If still none, the update ends. If input has
+been collected, cell behavior bifurcates on the basis of its current
+role. 
 
-HILO = {A
+Wire and proc role cells classify the input. If input is not
+recognizable as special or standard, e.g. by containing a mix of
+special messages and standard signals, or more than one special
+message, it is bad data: all input channels are cleared, and the
+update ends. If input is exactly one special message, the stem-init
+command, the cell adopts the stem role, clears its input and output
+channels, and the update ends. If input is exactly three standard
+signals, output channels are checked. If any output channel is full,
+the update ends. If all output channels are empty, the input is
+transferred from input to output channels according to the subset of
+the cell's RLEM rules governing signal redirection, and the update
+ends. A proc role cell further satisfies the memory update portion of
+the cell's RLEM rules, toggling its memory state.
 
-q0 = {stem, {}, {}}
+A stem role cell classifies the input. 
+
+
+Two means of wire/proc to stem communication:
+
+Constant time/number of signals, 5 bit command buffer:
+If none is currently specified, a standard signal of exactly one high
+value sets the A (001), B (010), or C (100) channel as the high
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as a appending a "1" to the command buffer or 2)
+if different, as appending a "0" to the command buffer.
+
+Variable time/signal count, 5 bit command counter:
+If none is specified, a standard signal of exactly one high value sets
+the A (001), B (010), or C (100) channel as the command selection
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as incrementing the command counter by 1, or 2)
+
+Counter value: 
+
+0 - 7: 
+target: self
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+8 - 15: 
+target: A neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+16 - 23: 
+target: B neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+24 - 31: 
+target: C neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+
+   (Activation)
+        |
+        |
+        #
+UPDATE-CELL-BEGIN
+        |
+        |
+        #
+   CHECK-INPUT-input=zeroed-#PULL-FOR-INPUT-input=zeroed-#UPDATE-CELL-END
+        |                         |                                 #
+        |                         |                                 |
+ input=non-zeroed          input=non-zeroed           PROCESS-BAD---+
+        |                         |                       #         |
+        +------------+------------+                      /          |
+                     |                              input=bad       |
+                     #                                 /            |
+                CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT           |
+                     |                       /         \            |
+                 role=stem                  |      input=special    |
+                     |                      |           |           |
+                     #               input=standard     |           |
+             STEM-PROCESS-INPUT             |           #           |
+                     |                      |       PROCESS-SPECIAL-+
+                     #                      #                       |
+             STEM-CLASSIFY-INPUT     PROCESS-STANDARD-role=wire-----+
+            /        |          \           |                       |
+           |    input=special    |      role=proc---#MEM-FLIP-------+
+           |         |           |                                  |
+      input=standard |       input=bad--#PROCESS-BAD----------------+
+           |         #                                              |
+           |   STEM-PROCESS-SPECIAL---------------------------------+
+           #                                                        |
+     STEM-PROCESS-STANDARD------------------------------------------+
+
+
+PULL-FOR-INPUT:
+ai <- ao.nbra
+bi <- bo.nbrb
+ci <- co.nbrc
+{ao.nbra, bo.nbrb, co.nbrc} <- {0, 0, 0}
+if {ai, bi, ci} = {0, 0, 0}
+   then input <- zeroed
+   else input <- non-zeroed
+
+CLASSIFY-INPUT:
+standard = {0, 1} x {0, 1} x {0, 1}
+special = {0, 0, stem-init} | {0, stem-init, 0} | {stem-init, 0, 0}
+bad = {not(standard | special)}
+
+input = case {ai, bi, ci}
+             standard => standard
+             special  => special
+             bad      => bad
+
+
