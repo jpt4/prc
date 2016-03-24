@@ -209,18 +209,24 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
      [(special? input) (process-special-message cid cls)]
      [(bad? input) (process-bad-input cid cls)])))
 
+(define (switch-mem memval) (abs (- memval 1)))
+
 (define (process-standard-signal cid cls)
   (let* ([cell (cell-list-ref cls cid)]
-         [input (cell-input cell)])
-    (cell-list-poke-state 
-     cls cid 
-     (cell-multi-poke cell (list (pair 'ao (car input))
+         [input (cell-input cell)]
+         [new-wire-cell (cell-multi-poke cell (list (pair 'ao (car input))
                                  (pair 'ai 0)
                                  (pair 'bo (cadr input))
                                  (pair 'bi 0)
                                  (pair 'co (caddr input))
-                                 (pair 'ci 0)))
-     )))
+                                 (pair 'ci 0)))])
+    (cell-list-poke-state 
+     cls cid 
+     (case (cell-peek-state cell 'rol)
+       [(wire) new-wire-cell]
+       [(proc) (cell-poke-state new-wire-cell 'mem 
+                                (switch-mem 
+                                 (cell-peek-state new-wire-cell 'mem)))]))))
 
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
