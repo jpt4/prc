@@ -32,6 +32,16 @@
 (define (cartesian-product lsa lsb)
   (map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
 
+(define (cartesian-product* lsa . lsb)
+  (map (lambda (a) (
+
+(define (xor a . b) 
+  (cond
+   [(and (null? a) (null? b)) #f]
+   [(null? b) a]
+   [(equal? a (car b)) (if (null? (cdr b)) #f (xor (car b) (cadr b)))]
+   [else (car b)]))
+     
 (define (unpack ls acc)
   (cond
    [(null? ls) (reverse acc)]
@@ -154,10 +164,15 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 
 ;;input classification predicates
 (define (zeroed? in) (foldr (lambda (e k) (and (zero? e) k)) #t in))
-(define (standard? in) 
+(define (standard? in)
   (and (not (zeroed? in)) 
        (foldr (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in)))
-(define (special? in) (member in special-messages))
+(define (special? in)
+  (map (lambda (e) (append e '(0))) (unpack (cartesian-product special-messages '(0)) '()))
+  (xor 
+   (equal? (list (car (member (car in) special-messages)) 0 0) in)
+   (equal? (list 0 (car (member (cadr in) special-messages)) 0) in)
+   (equal? (list 0 0 (car (member (caddr in) special-messages))) in)))
 (define (bad? in) (not (or (standard? in) (special? in))))
 
 (define (end-cell-update cid cls) cls)
@@ -220,16 +235,15 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
                                  (pair 'bo (cadr input))
                                  (pair 'bi 0)
                                  (pair 'co (caddr input))
-                                 (pair 'ci 0)))])
-    (end-cell-update 
-     cid 
-     (cell-list-poke-state 
+                                 (pair 'ci 0)))]
+         [new-cls (cell-list-poke-state 
       cls cid 
       (case (cell-peek-state cell 'rol)
         [(wire) new-wire-cell]
         [(proc) (cell-poke-state new-wire-cell 'mem 
                                  (switch-mem 
-                                  (cell-peek-state new-wire-cell 'mem)))])))))
+                                  (cell-peek-state new-wire-cell 'mem)))]))])
+    (end-cell-update cid new-cls)))
 
 #|  
 (define (process-special-message cid cls)
@@ -279,6 +293,8 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   )
 
 ;;;defaults
+;;functional
+;;object oriented
 (define default-core-obj (uc-core 'stem 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
 (define default-core-perim-obj 
   (uc-core 'perim 0 0 0 0 0 0 0 '(_ _ _) '(_ _ _ _ _)))
