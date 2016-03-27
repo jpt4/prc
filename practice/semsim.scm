@@ -32,8 +32,29 @@
 (define (cartesian-product lsa lsb)
   (map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
 
+#|
+
+(define (cartesian-power lsa lsb . lsc)
+  (cond 
+   [(null? lsc) (unpack (cartesian-product lsa lsb))]
+   [(pair? lsc) (foldr (lambda (a cartesian-power 
+   [else (cartesian-power (unpack (cartesian-product (let loop ([a lsa] [b lsb] [acc '()])
+    (cond
+     [(null? lsb) acc]
+     [else (loop (
+                         
+
+
+
 (define (cartesian-product* lsa . lsb)
-  (map (lambda (a) (
+  (let ([op 
+         (lambda (a acc) 
+           (cond 
+            [(null? lsb) acc]
+            [(null? (car b)) (loop foldr (lambda(map (lambda (a) (
+  (map (lambda (a) (op a '())) lsa))
+|#
+
 
 (define (xor a . b) 
   (cond
@@ -41,15 +62,18 @@
    [(null? b) a]
    [(equal? a (car b)) (if (null? (cdr b)) #f (xor (car b) (cadr b)))]
    [else (car b)]))
-     
-(define (unpack ls acc)
+
+(define (unpack-aux ls acc)
   (cond
    [(null? ls) (reverse acc)]
    [(and (pair? (car ls)) (not (null? (cdar ls))))
-    (unpack (cons (cdar ls) (cdr ls)) (cons (caar ls) acc))]
+    (unpack-aux (cons (cdar ls) (cdr ls)) (cons (caar ls) acc))]
    [(and (pair? (car ls)) (null? (cdar ls)))
-    (unpack (cdr ls) (cons (caar ls) acc))]
-   [else (cons (car ls) (unpack (cdr ls) acc))]))
+    (unpack-aux (cdr ls) (cons (caar ls) acc))]
+   [else (cons (car ls) (unpack-aux (cdr ls) acc))]))
+
+(define (unpack ls) (unpack-aux ls '()))  
+
 ;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
 ;; Similar to SRFI 1's fold
 (define (foldr kons knil lst)
@@ -89,7 +113,7 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define (mk-hex-node id neighbor-list cell)
   (list id (cdr (assq id neighbor-list)) cell))
 (define (mk-hex-neighbor-list rows cols)
-  (let ([grid (unpack (cartesian-product (iota rows) (iota cols)) '())])
+  (let ([grid (unpack (cartesian-product (iota rows) (iota cols)))])
     (map
      (lambda (e)
        (let* ([r (car e)] [c (cadr e)] [i (+ (* r cols) c)])
@@ -168,7 +192,7 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   (and (not (zeroed? in)) 
        (foldr (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in)))
 (define (special? in)
-  (map (lambda (e) (append e '(0))) (unpack (cartesian-product special-messages '(0)) '()))
+  (map (lambda (e) (append e '(0))) (unpack (cartesian-product special-messages '(0))))
   (xor 
    (equal? (list (car (member (car in) special-messages)) 0 0) in)
    (equal? (list 0 (car (member (cadr in) special-messages)) 0) in)
