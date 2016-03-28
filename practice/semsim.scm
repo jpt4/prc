@@ -32,29 +32,9 @@
 (define (cartesian-product lsa lsb)
   (map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
 
-#|
-
-(define (cartesian-power lsa lsb . lsc)
-  (cond 
-   [(null? lsc) (unpack (cartesian-product lsa lsb))]
-   [(pair? lsc) (foldr (lambda (a cartesian-power 
-   [else (cartesian-power (unpack (cartesian-product (let loop ([a lsa] [b lsb] [acc '()])
-    (cond
-     [(null? lsb) acc]
-     [else (loop (
-                         
-
-
-
-(define (cartesian-product* lsa . lsb)
-  (let ([op 
-         (lambda (a acc) 
-           (cond 
-            [(null? lsb) acc]
-            [(null? (car b)) (loop foldr (lambda(map (lambda (a) (
-  (map (lambda (a) (op a '())) lsa))
-|#
-
+(define (cartesian-power lsa . lsb)
+  (map deep-flatten 
+       (fold-left (lambda (a b) (unpack (cartesian-product a b))) lsa lsb)))
 
 (define (xor a . b) 
   (cond
@@ -74,22 +54,32 @@
 
 (define (unpack ls) (unpack-aux ls '()))  
 
+(define (fold-right op base ls)
+  (if (null? ls)
+      base
+      (op (car ls) (fold-right op base (cdr ls)))))
+
+(define (fold-left op base ls)
+  (if (null? ls)
+      base
+      (fold-left op (op base (car ls)) (cdr ls))))
+
 ;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
 ;; Similar to SRFI 1's fold
-(define (foldr kons knil lst)
+(define (fold kons knil lst)
   (if (null? lst)
       knil
-      (foldr kons (kons (car lst) knil) (cdr lst))))
+      (fold kons (kons (car lst) knil) (cdr lst))))
 ;; Same as R5RS's reverse
-(define (reverse lst)
-  (foldr cons '() lst))
+(define (reverse-list lst)
+  (fold-left (lambda (a b) (cons b a)) '() lst))
 (define (reverse-flatten-into x lst)
   (if (pair? x)
-      (foldr reverse-flatten-into lst x)
+      (fold reverse-flatten-into lst x)
       (cons x lst)))
 
 (define (deep-flatten lst)
-    (reverse (reverse-flatten-into lst '())))
+    (reverse-list (reverse-flatten-into lst '())))
 
 #|sophisticated flatten: 
 unpack n layers deep, * if unspecified
@@ -100,6 +90,12 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   (map (lambda (e) (list (list-ref lsa e)
                          (list-ref lsb e)))
        (iota (length lsa))))
+
+(define (list-rotate ls num)
+	(let* ([snum (modulo num (length ls))] ;sanitized shift value
+				 [new-head (list-tail ls (- (length ls) snum))]
+				 [new-tail (list-head ls (- (length ls) snum))])
+		(append new-head new-tail)))
 
 ;;directions
 (define (west-index i) (- i 1))
@@ -169,13 +165,13 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   (list (cell-peek-state cell 'ai) 
         (cell-peek-state cell 'bi) 
         (cell-peek-state cell 'ci)))
-;;original cell, list of (state value) pairs to poke
+;;original cell, list of (field value) pairs to poke
 (define (cell-multi-poke ocl pls)
-  (foldr (lambda (poke cell) (cell-poke-state cell (car poke) (cadr poke)))
+  (fold (lambda (poke cell) (cell-poke-state cell (car poke) (cadr poke)))
          ocl pls))
 ;;original cell list, list of (id new-entry) pairs to poke
 (define (cell-list-multi-poke ols pls)
-  (foldr 
+  (fold 
    (lambda (poke clst) (cell-list-poke-state clst (car poke) (cadr poke)))
    ols pls))
         
@@ -187,16 +183,14 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define (nbrc-cell id cls) (cell-list-ref cls (nbrc-id id cls))) 
 
 ;;input classification predicates
-(define (zeroed? in) (foldr (lambda (e k) (and (zero? e) k)) #t in))
+(define (zeroed? in) (fold (lambda (e k) (and (zero? e) k)) #t in))
 (define (standard? in)
   (and (not (zeroed? in)) 
-       (foldr (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in)))
+       (fold (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in)))
 (define (special? in)
-  (map (lambda (e) (append e '(0))) (unpack (cartesian-product special-messages '(0))))
-  (xor 
-   (equal? (list (car (member (car in) special-messages)) 0 0) in)
-   (equal? (list 0 (car (member (cadr in) special-messages)) 0) in)
-   (equal? (list 0 0 (car (member (caddr in) special-messages))) in)))
+  (let* ([lsa (cartesian-power special-messages '(0) '(0))]
+         [lsb (list-rotate lsa 1)] [lsc (list-rotate lsa 2)])
+    (xor (member in lsa) (member in lsb) (member in lsc))))
 (define (bad? in) (not (or (standard? in) (special? in))))
 
 (define (end-cell-update cid cls) cls)
@@ -269,14 +263,19 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
                                   (cell-peek-state new-wire-cell 'mem)))]))])
     (end-cell-update cid new-cls)))
 
-#|  
+(define (zero-mem cell) (cell-poke-state cell 'mem 0))
+(define (zero-input cell) (cell-multi-poke cell '((ai 0) (bi 0) (ci 0))))
+(define (zero-output cell) (cell-multi-poke cell '((ao 0) (bo 0) (co 0))))
+
+(define (stem-init cell)
+  (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
+
 (define (process-special-message cid cls)
   (let* ([cell (cell-list-ref cls cid)]
-         [input (cell-input cell)])
-    (case 
-  |#       
-         
-
+         [input (car (member (cell-input cell) special-messages))])
+    (case input
+      [(stem-init) (cell-list-poke-state cls cid (stem-init cell))]
+      )))
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
   (define state (mk-uc-core rol mem ai bi ci ao bo co hig buf))
