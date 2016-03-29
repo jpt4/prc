@@ -121,11 +121,11 @@ UPDATE-CELL-BEGIN
                      #                                 /            |
                 CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT           |
                      |                       /         \            |
-                 role=stem                  |      input=special    |
-                     |                      |           |           |
-                     #               input=standard     |           |
-             STEM-PROCESS-INPUT             |           #           |
-                     |                      |       PROCESS-SPECIAL-+
+                     |                      |      input=stem       |
+                 role=stem                  |           |           |
+                     |               input=standard     |           |
+                     |                      |           #           |
+                     |                      |       PROCESS-STEM----+
                      #                      #                       |
              STEM-CLASSIFY-INPUT     PROCESS-STANDARD-role=wire-----+
             /        |          \           |                       |

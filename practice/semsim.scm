@@ -240,7 +240,7 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
          [input (cell-input cell)])
     (cond
      [(standard? input) (process-standard-signal cid cls)]
-     [(special? input) (process-special-message cid cls)]
+     [(stem-init? input) (process-stem cid cls)]
      [(bad? input) (process-bad-input cid cls)])))
 
 (define (switch-mem memval) (abs (- memval 1)))
@@ -270,12 +270,26 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define (stem-init cell)
   (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
 
-(define (process-special-message cid cls)
+(define (process-stem cid cls)
   (let* ([cell (cell-list-ref cls cid)]
-         [input (car (member (cell-input cell) special-messages))])
-    (case input
-      [(stem-init) (cell-list-poke-state cls cid (stem-init cell))]
-      )))
+         [new-cls (cell-list-poke-state cls cid (stem-init cell))])
+    (end-cell-update cid new-cls)))
+
+(define (stem-process-special-message cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
+         [input (car (member (cell-input cell) special-messages))]
+         [poke (case input
+                 [(stem-init) stem-init]
+                 [(wire-r-init) wire-r-init]
+                 [(wire-l-init) wire-l-init]
+                 [(proc-r-init) proc-r-init]
+                 [(proc-l-init) proc-l-init]
+                 [(write-buf-zero) write-buf-zero]
+                 [(write-buf-one) write-buf-one])]
+         [new-cell (poke cell)]
+         [new-cls (cell-list-poke-state cls cid new-cell)])
+    (end-cell-update cid new-cls)))
+  
 ;;;universal cell core
 (define (uc-core rol mem ai bi ci ao bo co hig buf)
   (define state (mk-uc-core rol mem ai bi ci ao bo co hig buf))
