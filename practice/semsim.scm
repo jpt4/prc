@@ -9,39 +9,88 @@
 (define max-buffer-length 5)
 (define special-messages 
   '(stem-init wire-r-init wire-l-init proc-r-init proc-l-init write-buf-zero
-              write-buf-one))
+n              write-buf-one))
 (define uc-core-prototype (list 'rol 'mem 'ai 'bi 'ci 'ao 'bo 'co 'hig 'buf))
 
-;;;utilities
+;;;data structure carving
+;;cell
+(define (cell-input cell) 
+  (list (cell-peek-state cell 'ai) 
+        (cell-peek-state cell 'bi) 
+        (cell-peek-state cell 'ci)))
+(define (cell-meta-data cid cls)
+  (list-head (cell-list-ref cls cid) 2))
+
+(define (nbra-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 0))
+(define (nbrb-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 1))
+(define (nbrc-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 2))
+(define (nbra-cell cid cls) (cell-list-ref cls (nbra-id cid cls)))
+(define (nbrb-cell cid cls) (cell-list-ref cls (nbrb-id cid cls)))
+(define (nbrc-cell cid cls) (cell-list-ref cls (nbrc-id cid cls))) 
+
+
+;;cell list
 (define (cell-list-ref cell-list index) 
   (if (equal? index 'p) 
       (car cell-list)
       (list-ref (cdr cell-list) index)))
-(define (cell-meta-data cid cls)
-  (list-head (cell-list-ref cls cid) 2))
 (define (cell-list-head cls cid)
   (list-head cls (if (equal? cid 'p) 1 (+ 1 cid))))
 (define (cell-list-tail cls cid)
   (list-tail cls (if (equal? cid 'p) 1 (+ 1 cid))))
+        
+;;;utilities
 (define (pair a b) (list a b))
 (define (dispnl* txt . res)
   (cond
    [(pair? txt) (begin (display (car txt)) (newline) (dispnl* (cdr txt)))]
    [(not (null? txt)) (begin (display txt) (newline) (dispnl* res))]))
+
 ;;f((a ...) (b ...)) = (((a b) (a ...)) (... b) (... ...))
 (define (cartesian-product lsa lsb)
   (map (lambda (a) (map (lambda (b) (list a b)) lsb)) lsa))
-
 (define (cartesian-power lsa . lsb)
   (map deep-flatten 
        (fold-left (lambda (a b) (unpack (cartesian-product a b))) lsa lsb)))
 
-(define (xor a . b) 
-  (cond
-   [(and (null? a) (null? b)) #f]
-   [(null? b) a]
-   [(equal? a (car b)) (if (null? (cdr b)) #f (xor (car b) (cadr b)))]
-   [else (car b)]))
+(define (exactly num fn ls)
+  (let ([fil (filter fn ls)])
+    (if (eq? (length fil) num)
+        fil
+        #f)))
+
+;;flatten
+;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
+;; Similar to SRFI 1's fold
+(define (fold kons knil lst)
+  (if (null? lst)
+      knil
+      (fold kons (kons (car lst) knil) (cdr lst))))
+(define (reverse-list lst)
+  (fold-left (lambda (a b) (cons b a)) '() lst))
+(define (reverse-flatten-into x lst)
+  (if (pair? x)
+      (fold reverse-flatten-into lst x)
+      (cons x lst)))
+(define (deep-flatten lst)
+    (reverse-list (reverse-flatten-into lst '())))
+
+(define (fold-right op base ls)
+  (if (null? ls)
+      base
+      (op (car ls) (fold-right op base (cdr ls)))))
+(define (fold-left op base ls)
+  (if (null? ls)
+      base
+      (fold-left op (op base (car ls)) (cdr ls))))
+
+(define (list-rotate ls num)
+	(let* ([snum (modulo num (length ls))] ;sanitized shift value
+				 [new-head (list-tail ls (- (length ls) snum))]
+				 [new-tail (list-head ls (- (length ls) snum))])
+		(append new-head new-tail)))
+
+(define (member* e ls) (filter (lambda (a) (eq? a e)) ls))
 
 (define (unpack-aux ls acc)
   (cond
@@ -51,52 +100,20 @@
    [(and (pair? (car ls)) (null? (cdar ls)))
     (unpack-aux (cdr ls) (cons (caar ls) acc))]
    [else (cons (car ls) (unpack-aux (cdr ls) acc))]))
-
 (define (unpack ls) (unpack-aux ls '()))  
 
-(define (fold-right op base ls)
-  (if (null? ls)
-      base
-      (op (car ls) (fold-right op base (cdr ls)))))
-
-(define (fold-left op base ls)
-  (if (null? ls)
-      base
-      (fold-left op (op base (car ls)) (cdr ls))))
-
-;;source: http://stackoverflow.com/questions/7313563/flatten-a-list-using-only-the-forms-in-the-little-schemer
-;; Similar to SRFI 1's fold
-(define (fold kons knil lst)
-  (if (null? lst)
-      knil
-      (fold kons (kons (car lst) knil) (cdr lst))))
-;; Same as R5RS's reverse
-(define (reverse-list lst)
-  (fold-left (lambda (a b) (cons b a)) '() lst))
-(define (reverse-flatten-into x lst)
-  (if (pair? x)
-      (fold reverse-flatten-into lst x)
-      (cons x lst)))
-
-(define (deep-flatten lst)
-    (reverse-list (reverse-flatten-into lst '())))
-
-#|sophisticated flatten: 
-unpack n layers deep, * if unspecified
-do/not preserve unpacked '() elements <-- via preprocess tagging?          
-|#
-
+(define (xor a . b) 
+  (cond
+   [(and (null? a) (null? b)) #f]
+   [(null? b) a]
+   [(equal? a (car b)) (if (null? (cdr b)) #f (xor (car b) (cadr b)))]
+   [else (car b)]))
 (define (zip lsa lsb)
   (map (lambda (e) (list (list-ref lsa e)
                          (list-ref lsb e)))
        (iota (length lsa))))
 
-(define (list-rotate ls num)
-	(let* ([snum (modulo num (length ls))] ;sanitized shift value
-				 [new-head (list-tail ls (- (length ls) snum))]
-				 [new-tail (list-head ls (- (length ls) snum))])
-		(append new-head new-tail)))
-
+;;;cell matrix
 ;;directions
 (define (west-index i) (- i 1))
 (define (east-index i) (+ i 1))
@@ -105,9 +122,9 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
 (define (north-west-index i cols) (- (+ i cols) 1))
 (define (south-east-index i cols) (+ (- i cols) 1))
 
-;;;hex-grid
-(define (mk-hex-node id neighbor-list cell)
-  (list id (cdr (assq id neighbor-list)) cell))
+;;hex-grid
+(define (mk-hex-node cid neighbor-list cell)
+  (list cid (cdr (assq cid neighbor-list)) cell))
 (define (mk-hex-neighbor-list rows cols)
   (let ([grid (unpack (cartesian-product (iota rows) (iota cols)))])
     (map
@@ -140,7 +157,7 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
                             (iota (* rows cols))))])
     base))
 
-;;;functional
+;;;functional style
 (define (mk-uc-core rol mem ai bi ci ao bo co hig buf)
   (list rol mem ai bi ci ao bo co hig buf))
 (define (cell-peek-state sta elm)
@@ -155,16 +172,13 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
         (append (list-head ost splice)
                 (list nst)
                 (list-tail ost (+ 1 splice))))))
-;old cell list, cell id, replacement cell value
+;;old cell list, cell cid, replacement cell value
 (define (cell-list-poke-state ols cid ncl)
   (list (cell-list-head ols cid) 
         (cons (cell-meta-data cid ols) (list ncl))
         (cell-list-tail ols (+ 1 cid))))
 
-(define (cell-input cell) 
-  (list (cell-peek-state cell 'ai) 
-        (cell-peek-state cell 'bi) 
-        (cell-peek-state cell 'ci)))
+
 ;;original cell, list of (field value) pairs to poke
 (define (cell-multi-poke ocl pls)
   (fold (lambda (poke cell) (cell-poke-state cell (car poke) (cadr poke)))
@@ -174,40 +188,36 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
   (fold 
    (lambda (poke clst) (cell-list-poke-state clst (car poke) (cadr poke)))
    ols pls))
-        
-(define (nbra-id id cls) (list-ref (cadr (cell-list-ref cls id)) 0))
-(define (nbrb-id id cls) (list-ref (cadr (cell-list-ref cls id)) 1))
-(define (nbrc-id id cls) (list-ref (cadr (cell-list-ref cls id)) 2))
-(define (nbra-cell id cls) (cell-list-ref cls (nbra-id id cls)))
-(define (nbrb-cell id cls) (cell-list-ref cls (nbrb-id id cls)))
-(define (nbrc-cell id cls) (cell-list-ref cls (nbrc-id id cls))) 
 
 ;;input classification predicates
-(define (zeroed? in) (fold (lambda (e k) (and (zero? e) k)) #t in))
+(define (zeroes? in) (fold (lambda (e k) (and (zero? e) k)) #t in))
 (define (standard? in)
-  (and (not (zeroed? in)) 
+  (and (not (zeroes? in)) 
        (fold (lambda (e k) (and (or (zero? e) (equal? e 1)) k)) #t in)))
+(define (stem-init? in)
+  (eq? (length (member in '((stem-init 0 0) (0 stem-init 0) (0 0 stem-init))))
+       1))
 (define (special? in)
   (let* ([lsa (cartesian-power special-messages '(0) '(0))]
          [lsb (list-rotate lsa 1)] [lsc (list-rotate lsa 2)])
-    (xor (member in lsa) (member in lsb) (member in lsc))))
+    (eq? (length (member in (cons lsa (cons lsb lsc)))) 1)))
 (define (bad? in) (not (or (standard? in) (special? in))))
 
 (define (end-cell-update cid cls) cls)
 
-(define (check-input id cls)
-  (let* ([cell (cell-list-ref cls id)]
+(define (check-input cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
          [input (list (cell-peek-state cell 'ai) (cell-peek-state cell 'bi) 
                       (cell-peek-state cell 'ci))])
-    (if (zeroed? input)
-        (pull-for-input id cls)
-        (check-role id cls))))
+    (if (zeroes? input)
+        (pull-for-input cid cls)
+        (check-role cid cls))))
 
-(define (check-role id cls)
-  (let* ([cell (cell-list-ref cls id)]
+(define (check-role cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
          [role (cell-peek-state cell 'rol)])
     (cond
-     [(or (equal? 'proc role) (equal? 'wire role)) (classify-input id cls)]
+     [(or (equal? 'proc role) (equal? 'wire role)) (classify-input cid cls)]
      [(equal? 'stem role) (stem-process-input)])))
 
 (define (pull-for-input cid cls)
@@ -217,8 +227,8 @@ do/not preserve unpacked '() elements <-- via preprocess tagging?
          [nbrc-co (cell-peek-state (nbrc-cell cid cls) 'co)]
          [input (list nbra-ao nbrb-bo nbrc-co)])
     (cond
-     [(zeroed? input) (end-cell-update cid cls)]
-     [(not (zeroed? input)) 
+     [(zeroes? input) (end-cell-update cid cls)]
+     [(not (zeroes? input)) 
       (let* ([new-cl 
               (cell-multi-poke cell (list (pair 'ai nbra-ao)
                                           (pair 'bi nbrb-bo)
