@@ -9,7 +9,7 @@
 (define max-buffer-length 5)
 (define special-messages 
   '(stem-init wire-r-init wire-l-init proc-r-init proc-l-init write-buf-zero
-n              write-buf-one))
+              write-buf-one))
 (define uc-core-prototype (list 'rol 'mem 'ai 'bi 'ci 'ao 'bo 'co 'hig 'buf))
 
 ;;;data structure carving
@@ -27,7 +27,6 @@ n              write-buf-one))
 (define (nbra-cell cid cls) (cell-list-ref cls (nbra-id cid cls)))
 (define (nbrb-cell cid cls) (cell-list-ref cls (nbrb-id cid cls)))
 (define (nbrc-cell cid cls) (cell-list-ref cls (nbrc-id cid cls))) 
-
 
 ;;cell list
 (define (cell-list-ref cell-list index) 
@@ -92,6 +91,7 @@ n              write-buf-one))
 
 (define (member* e ls) (filter (lambda (a) (eq? a e)) ls))
 
+(define (unpack ls) (unpack-aux ls '()))  
 (define (unpack-aux ls acc)
   (cond
    [(null? ls) (reverse acc)]
@@ -100,7 +100,6 @@ n              write-buf-one))
    [(and (pair? (car ls)) (null? (cdar ls)))
     (unpack-aux (cdr ls) (cons (caar ls) acc))]
    [else (cons (car ls) (unpack-aux (cdr ls) acc))]))
-(define (unpack ls) (unpack-aux ls '()))  
 
 (define (xor a . b) 
   (cond
@@ -178,7 +177,6 @@ n              write-buf-one))
         (cons (cell-meta-data cid ols) (list ncl))
         (cell-list-tail ols (+ 1 cid))))
 
-
 ;;original cell, list of (field value) pairs to poke
 (define (cell-multi-poke ocl pls)
   (fold (lambda (poke cell) (cell-poke-state cell (car poke) (cadr poke)))
@@ -218,7 +216,7 @@ n              write-buf-one))
          [role (cell-peek-state cell 'rol)])
     (cond
      [(or (equal? 'proc role) (equal? 'wire role)) (classify-input cid cls)]
-     [(equal? 'stem role) (stem-process-input)])))
+     [(equal? 'stem role) (stem-classify-input cid cls)])))
 
 (define (pull-for-input cid cls)
   (let* ([cell (cell-list-ref cls cid)]
@@ -284,6 +282,18 @@ n              write-buf-one))
   (let* ([cell (cell-list-ref cls cid)]
          [new-cls (cell-list-poke-state cls cid (stem-init cell))])
     (end-cell-update cid new-cls)))
+
+(define (process-bad-input cid cls)
+  (let ([cell (cell-list-ref cls cid)])
+    (cell-list-poke-state cls cid (zero-input cell))))
+
+(define (stem-classify-input cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
+         [input (cell-input cell)])
+    (cond
+     [(standard? input) (stem-process-standard-signal cid cls)]
+     [(special? input) (stem-process-special-message cid cls)]
+     [(bad? input) (process-bad-input cid cls)])))    
 
 (define (stem-process-special-message cid cls)
   (let* ([cell (cell-list-ref cls cid)]
