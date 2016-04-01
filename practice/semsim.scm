@@ -295,6 +295,25 @@
      [(special? input) (stem-process-special-message cid cls)]
      [(bad? input) (process-bad-input cid cls)])))    
 
+(define (stem-process-standard-signal cid cls)
+  (let* ([cell (cell-list-ref cls cid)]
+         [input (cell-input cell)])
+    (if (null? hig)
+        (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))
+        (cond
+         [(equal? input hig) 
+          (cell-list-poke-state 
+           cls cid 
+           (cell-poke-state 
+            cell 'buf 
+            (append (cell-peek-state cell 'buf) 1)))]
+         [else 
+          (cell-list-poke-state 
+           cls cid 
+           (cell-poke-state 
+            cell 'buf 
+            (append (cell-peek-state cell 'buf) 0)))]))))        
+
 (define (stem-process-special-message cid cls)
   (let* ([cell (cell-list-ref cls cid)]
          [input (car (member (cell-input cell) special-messages))]
