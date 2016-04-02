@@ -274,9 +274,8 @@
 (define (zero-mem cell) (cell-poke-state cell 'mem 0))
 (define (zero-input cell) (cell-multi-poke cell '((ai 0) (bi 0) (ci 0))))
 (define (zero-output cell) (cell-multi-poke cell '((ao 0) (bo 0) (co 0))))
-
-(define (stem-init cell)
-  (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
+(define (zero-buf cell) (cell-poke-state cell 'buf '()))
+(define (zero-hig cell) (cell-poke-state cell 'hig '()))
 
 (define (process-stem cid cls)
   (let* ([cell (cell-list-ref cls cid)]
@@ -297,7 +296,8 @@
 
 (define (stem-process-standard-signal cid cls)
   (let* ([cell (cell-list-ref cls cid)]
-         [input (cell-input cell)])
+         [input (cell-input cell)]
+         [hig (cell-peek-state cell 'hig)])
     (if (null? hig)
         (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))
         (cond
@@ -314,6 +314,17 @@
             cell 'buf 
             (append (cell-peek-state cell 'buf) 0)))]))))        
 
+(define (stem-init cell)
+  (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
+(define (wire-r-init cell)
+  (cell-multi-poke cell '((rol wire) (mem 0) (ai 0) (bi 0) (ci 0))))
+(define (wire-l-init cell)
+  (cell-multi-poke cell '((rol wire) (mem 1) (ai 0) (bi 0) (ci 0))))
+(define (proc-r-init cell)
+  (cell-multi-poke cell '((rol proc) (mem 0) (ai 0) (bi 0) (ci 0))))
+(define (proc-l-init cell)
+  (cell-multi-poke cell '((rol proc) (mem 1) (ai 0) (bi 0) (ci 0))))
+
 (define (stem-process-special-message cid cls)
   (let* ([cell (cell-list-ref cls cid)]
          [input (car (member (cell-input cell) special-messages))]
@@ -325,7 +336,7 @@
                  [(proc-l-init) proc-l-init]
                  [(write-buf-zero) write-buf-zero]
                  [(write-buf-one) write-buf-one])]
-         [new-cell (poke cell)]
+         [new-cell (zero-hig (zero-buf (poke cell)))]
          [new-cls (cell-list-poke-state cls cid new-cell)])
     (end-cell-update cid new-cls)))
   
