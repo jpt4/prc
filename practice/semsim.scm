@@ -297,22 +297,24 @@
 (define (stem-process-standard-signal cid cls)
   (let* ([cell (cell-list-ref cls cid)]
          [input (cell-input cell)]
-         [hig (cell-peek-state cell 'hig)])
-    (if (null? hig)
-        (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))
-        (cond
-         [(equal? input hig) 
-          (cell-list-poke-state 
-           cls cid 
-           (cell-poke-state 
-            cell 'buf 
-            (append (cell-peek-state cell 'buf) 1)))]
-         [else 
-          (cell-list-poke-state 
-           cls cid 
-           (cell-poke-state 
-            cell 'buf 
-            (append (cell-peek-state cell 'buf) 0)))]))))        
+         [hig (cell-peek-state cell 'hig)]
+         [new-cell 
+          (if (null? hig)
+              (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))
+              (cond
+               [(equal? input hig) 
+                (cell-list-poke-state 
+                 cls cid 
+                 (cell-poke-state 
+                  cell 'buf 
+                  (append (cell-peek-state cell 'buf) 1)))]
+               [else 
+                (cell-list-poke-state 
+                 cls cid 
+                 (cell-poke-state 
+                  cell 'buf 
+                  (append (cell-peek-state cell 'buf) 0)))]))])
+    (
 
 (define (stem-init cell)
   (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
@@ -324,6 +326,12 @@
   (cell-multi-poke cell '((rol proc) (mem 0) (ai 0) (bi 0) (ci 0))))
 (define (proc-l-init cell)
   (cell-multi-poke cell '((rol proc) (mem 1) (ai 0) (bi 0) (ci 0))))
+(define (write-buf-zero cell)
+  (let ([buf (cell-peek-state cell 'buf)])
+    (cell-poke-state cell 'buf (append buf (list 0)))))
+(define (write-buf-one cell)
+  (let ([buf (cell-peek-state cell 'buf)])
+    (cell-poke-state cell 'buf (append buf (list 1)))))
 
 (define (stem-process-special-message cid cls)
   (let* ([cell (cell-list-ref cls cid)]
