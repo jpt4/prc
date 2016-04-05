@@ -4,40 +4,6 @@
 ;;UTC20160308
 ;;Guile Scheme v2.0+
 
-;;;constants
-(define standard-signal 1)
-(define max-buffer-length 5)
-(define special-messages 
-  '(stem-init wire-r-init wire-l-init proc-r-init proc-l-init write-buf-zero
-              write-buf-one))
-(define uc-core-prototype (list 'rol 'mem 'ai 'bi 'ci 'ao 'bo 'co 'hig 'buf))
-
-;;;data structure carving
-;;cell
-(define (cell-input cell) 
-  (list (cell-peek-state cell 'ai) 
-        (cell-peek-state cell 'bi) 
-        (cell-peek-state cell 'ci)))
-(define (cell-meta-data cid cls)
-  (list-head (cell-list-ref cls cid) 2))
-
-(define (nbra-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 0))
-(define (nbrb-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 1))
-(define (nbrc-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 2))
-(define (nbra-cell cid cls) (cell-list-ref cls (nbra-id cid cls)))
-(define (nbrb-cell cid cls) (cell-list-ref cls (nbrb-id cid cls)))
-(define (nbrc-cell cid cls) (cell-list-ref cls (nbrc-id cid cls))) 
-
-;;cell list
-(define (cell-list-ref cell-list index) 
-  (if (equal? index 'p) 
-      (car cell-list)
-      (list-ref (cdr cell-list) index)))
-(define (cell-list-head cls cid)
-  (list-head cls (if (equal? cid 'p) 1 (+ 1 cid))))
-(define (cell-list-tail cls cid)
-  (list-tail cls (if (equal? cid 'p) 1 (+ 1 cid))))
-        
 ;;;utilities
 (define (pair a b) (list a b))
 (define (dispnl* txt . res)
@@ -74,6 +40,8 @@
 (define (deep-flatten lst)
     (reverse-list (reverse-flatten-into lst '())))
 
+(define (false? val) (equal? #f val))
+
 (define (fold-right op base ls)
   (if (null? ls)
       base
@@ -90,6 +58,7 @@
 		(append new-head new-tail)))
 
 (define (member* e ls) (filter (lambda (a) (eq? a e)) ls))
+(define (true? val) (equal? #t val))
 
 (define (unpack ls) (unpack-aux ls '()))  
 (define (unpack-aux ls acc)
@@ -101,6 +70,7 @@
     (unpack-aux (cdr ls) (cons (caar ls) acc))]
    [else (cons (car ls) (unpack-aux (cdr ls) acc))]))
 
+(define (value->boolean-number val) (if (true? (not (not val))) 1 0))
 (define (xor a . b) 
   (cond
    [(and (null? a) (null? b)) #f]
@@ -112,6 +82,40 @@
                          (list-ref lsb e)))
        (iota (length lsa))))
 
+;;;constants
+(define standard-signal 1)
+(define max-buffer-length 5)
+(define special-messages 
+  '(stem-init wire-r-init wire-l-init proc-r-init proc-l-init write-buf-zero
+              write-buf-one))
+(define uc-core-prototype (list 'rol 'mem 'ai 'bi 'ci 'ao 'bo 'co 'hig 'buf))
+
+;;;data structure carving
+;;cell
+(define (cell-input cell) 
+  (list (cell-peek-state cell 'ai) 
+        (cell-peek-state cell 'bi) 
+        (cell-peek-state cell 'ci)))
+(define (cell-meta-data cid cls)
+  (list-head (cell-list-ref cls cid) 2))
+
+(define (nbra-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 0))
+(define (nbrb-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 1))
+(define (nbrc-id cid cls) (list-ref (cadr (cell-list-ref cls cid)) 2))
+(define (nbra-cell cid cls) (cell-list-ref cls (nbra-id cid cls)))
+(define (nbrb-cell cid cls) (cell-list-ref cls (nbrb-id cid cls)))
+(define (nbrc-cell cid cls) (cell-list-ref cls (nbrc-id cid cls))) 
+
+;;cell list
+(define (cell-list-ref cell-list index) 
+  (if (equal? index 'p) 
+      (car cell-list)
+      (list-ref (cdr cell-list) index)))
+(define (cell-list-head cls cid)
+  (list-head cls (if (equal? cid 'p) 1 (+ 1 cid))))
+(define (cell-list-tail cls cid)
+  (list-tail cls (if (equal? cid 'p) 1 (+ 1 cid))))
+        
 ;;;cell matrix
 ;;directions
 (define (west-index i) (- i 1))
@@ -298,23 +302,25 @@
   (let* ([cell (cell-list-ref cls cid)]
          [input (cell-input cell)]
          [hig (cell-peek-state cell 'hig)]
-         [new-cell 
-          (if (null? hig)
-              (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))
-              (cond
-               [(equal? input hig) 
-                (cell-list-poke-state 
-                 cls cid 
-                 (cell-poke-state 
-                  cell 'buf 
-                  (append (cell-peek-state cell 'buf) 1)))]
-               [else 
-                (cell-list-poke-state 
-                 cls cid 
-                 (cell-poke-state 
-                  cell 'buf 
-                  (append (cell-peek-state cell 'buf) 0)))]))])
-    (
+         [buf (cell-peek-state cell 'buf)])
+    (cond 
+     [(null? hig) ;first input sets high signal pattern
+      (cell-list-poke-state cls cid (cell-poke-state cell 'hig input))]
+     [(< (length buf) 4) ;high signal known
+      (cell-list-poke-state 
+       cls cid 
+       (append-buf cell (value->boolean-number (equal? input hig))))]
+     [(equal? (length buf) 4) ;fire message at target
+      (let ([new-cls (cell-list-poke-state 
+                      cid cls 
+                      (append-buf 
+                       cell 
+                       (value->boolean-number (equal? input hig))))])
+      (process-buf cid new-cls))]
+     )))
+
+(define (append-buf cell val) 
+  (cell-poke-state cell 'buf (append (cell-peek-state cell 'buf) (list val))))
 
 (define (stem-init cell)
   (cell-poke-state (zero-mem (zero-output (zero-input cell))) 'rol 'stem))
