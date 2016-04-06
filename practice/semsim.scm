@@ -319,6 +319,17 @@
       (process-buf cid new-cls))]
      )))
 
+(define (process-buf cid cls)
+  (let* ([cell (cell-list-ref cls cid)] [buf (cell-peek-state cell 'buf)]
+         [tar (list-head buf 2)] [msg (list-tail buf 2)]
+         [tar-cell (cond 
+                    [(eq? '(0 0) tar) cell] ;;message passing requires a mailbox; to talk to itself, each cell must have a recurrent edge.
+                    [(eq? '(0 1) tar) (nbra-cell cid cls)]
+                    [(eq? '(1 0) tar) (nbrb-cell cid cls)]
+                    [(eq? '(1 1) tar) (nbrc-cell cid cls)])]
+         [
+    (
+
 (define (append-buf cell val) 
   (cell-poke-state cell 'buf (append (cell-peek-state cell 'buf) (list val))))
 
