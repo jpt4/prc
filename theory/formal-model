@@ -158,3 +158,23 @@ input = case {ai, bi, ci}
              bad      => bad
 
 
+FSM
+Node:
+Role x Memory x High-Pattern x Buffer x Self-mailbox
+
+Edge:
+Efferent (nearerzero) I/O x Afferent (fartherzero) I/O
+
+(role memory high-pattern buffer self-mailbox ai bi ci ao bo co nbrao nbrbo nbrco)
+
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+
+Default Initial:
+
+('stem 0 '() '() '() 0 0 0 0 0 0 ? ? ?)
+
+Proc:
+Initial:
+('proc 
+
+
