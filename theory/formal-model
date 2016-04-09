@@ -159,12 +159,15 @@ input = case {ai, bi, ci}
 
 
 FSM
+(* 3 2 7 32 7 10 10 10 10 10 10 10 10 10) = 9408000000000
 Node:
-Role x Memory x High-Pattern x Buffer x Self-mailbox
+Role x Memory x High-Pattern x Buffer x Self-mailbox x A-in x B-in x C-in
+     x A-out x B-out x C-out
 
 Cell:
 Role x Memory x High-Pattern x Buffer x Self-mailbox x A-in x B-in x C-in
-     x A-out x B-out x C-out x Neighbor-A-out x Neighbor-B-out x Neighbor-C-out
+     x A-out x B-out x C-out 
+     x Neighbor-A-out x Neighbor-B-out x Neighbor-C-out
 
 (role memory high-pattern buffer self-mailbox
       ai bi ci ao bo co nbrao nbrbo nbrco)
@@ -172,12 +175,42 @@ Role x Memory x High-Pattern x Buffer x Self-mailbox x A-in x B-in x C-in
 (rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
 
 Default Initial:
-
 ('stem 0 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
 
 Proc:
 Initial:
 ('proc 0 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
 
+;;;Programs
 
+;;Activate
+Init: 
+('stem 0/1 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
+
+;;check-for-output
+(rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
+->
+(rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
+=> check-for-input
+
+(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+->
+(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+=> collect-input-and-end
+
+;;check-for-input
+(_ _ _ _ special-message 0 0 0 ao bo co nao nbo nco)
+->
+(_ _ _ _ special-message 0 0 0 ao bo co nao nbo nco)
+=> process-special-message
+
+(_ _ _ _ '() 0 0 0 _ _ _ nao nbo nco)
+->
+(_ _ _ _ '() nao nbo nco _ _ _ 0 0 0)
+=> classify-input
+
+(_ _ _ _ '() ~{0 0 0} _ _ _ nao nbo nco)
+->
+(_ _ _ _ '() ~{0 0 0} _ _ _ nao nbo nco)
+=> classify-input
 
