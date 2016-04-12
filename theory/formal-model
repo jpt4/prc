@@ -183,9 +183,14 @@ Initial:
 
 ;;;Programs
 
-;;Activate
 Init: 
 ('stem 0/1 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
+
+;;Activate
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+->
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+=> check-for-output
 
 ;;check-for-output
 (rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
@@ -197,6 +202,11 @@ Init:
 ->
 (rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
 => collect-input-and-end
+
+;;collect-input-and-end
+(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+->
+(rol mem hig buf smb nao nbo nco ~{0 0 0} 0 0 0)
 
 ;;check-for-input
 (_ _ _ _ special-message 0 0 0 ao bo co nao nbo nco)
@@ -213,4 +223,3 @@ Init:
 ->
 (_ _ _ _ '() ~{0 0 0} _ _ _ nao nbo nco)
 => classify-input
-
