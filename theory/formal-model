@@ -186,7 +186,7 @@ Initial:
 Init: 
 ('stem 0/1 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
 
-;;Activate
+;;activate
 (rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
 ->
 (rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
@@ -194,32 +194,101 @@ Init:
 
 ;;check-for-output
 (rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
-->
-(rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
+-> (rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
 => check-for-input
 
 (rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
-->
-(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
-=> collect-input-and-end
+-> (rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+=> collect-input
 
-;;collect-input-and-end
-(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
-->
-(rol mem hig buf smb nao nbo nco ~{0 0 0} 0 0 0)
+;;collect-input
+(rol mem hig buf '() 0 0 0 ~{0 0 0} nao nbo nco)
+-> (rol mem hig buf '() nao nbo nco ~{0 0 0} 0 0 0)
+= end-activation
+
+(rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() nao nbo nco 0 0 0 0 0 0)
+=> classify-input
 
 ;;check-for-input
-(_ _ _ _ special-message 0 0 0 ao bo co nao nbo nco)
-->
-(_ _ _ _ special-message 0 0 0 ao bo co nao nbo nco)
+(rol mem hig buf special-message 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem buf hig special-message 0 0 0 0 0 0 nao nbo nco)
 => process-special-message
 
-(_ _ _ _ '() 0 0 0 _ _ _ nao nbo nco)
-->
-(_ _ _ _ '() nao nbo nco _ _ _ 0 0 0)
+(rol mem hig buf '() ~{0 0 0} 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() ~{0 0 0} 0 0 0 nao nbo nco)
 => classify-input
 
-(_ _ _ _ '() ~{0 0 0} _ _ _ nao nbo nco)
-->
-(_ _ _ _ '() ~{0 0 0} _ _ _ nao nbo nco)
-=> classify-input
+(rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+=> collect-input
+
+;;classify-input
+(rol mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> process-standard-signal
+
+(rol mem hig buf '() special-message 0 0 0 0 0 nao nbo nco)
+(rol mem hig buf '() 0 special-message 0 0 0 0 nao nbo nco)
+(rol mem hig buf '() 0 0 special-message 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() special-message 0 0 0 0 0 nao nbo nco)
+   (rol mem hig buf '() 0 special-message 0 0 0 0 nao nbo nco)
+   (rol mem hig buf '() 0 0 special-message 0 0 0 nao nbo nco)
+=> process-special-message
+
+(rol mem hig buf '() 0 0 0 0 0 0 0 0 0)
+-> (rol mem hig buf '() 0 0 0 0 0 0 0 0 0)
+=> end-activation
+
+;;process-standard-signal
+(stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> stem-process-standard-signal
+
+(wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> wire-process-standard-signal
+
+(proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> proc-process-standard-signal
+
+;;wire-process-standard-signal
+(wire 0 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (wire 0 hig buf '() 0 0 0 ci ai bi nao nbo nco)
+=> end-activation
+
+(wire 1 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (wire 1 hig buf '() 0 0 0 bi ci ai nao nbo nco)
+=> end-activation
+
+;;proc-process-standard-signal
+(proc 0 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (proc 1 hig buf '() 0 0 0 ci ai bi nao nbo nco)
+=> end-activation
+
+(proc 1 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (proc 0 hig buf '() 0 0 0 bi ci ai nao nbo nco)
+=> end-activation
+
+;;stem-process-standard-signal
+(stem mem '() '() '() ai bi ci 0 0 0 nao nbo nco)
+-> (stem mem {ai bi ci} '() '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+(stem mem ~{ai bi ci} {{ 0 0 0} ... { 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
+-> (stem mem ~{ai bi ci} {{ 0 0 0 0} ... { 1 1 1 0}} '() ai bi ci 0 0 0 nao nbo nco)
+=> end-activation
+
+(stem mem {ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
+-> (stem mem {ai bi ci} {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+(stem mem ~{ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
+-> (stem mem ~{ai bi ci} {{0 0 0 0 0} ... {1 1 1 1 0}} '() ai bi ci 0 0 0 nao nbo nco)
+=> process-buffer
+
+(stem mem {ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
+-> (stem mem {ai bi ci} {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+=> process-buffer
+

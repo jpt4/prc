@@ -20,6 +20,8 @@
   (list r m h b s ai bi ci ao bo co))
 
 (define (mk-uc-fsm node-index node-list)
-  (let* ([node (node-list-ref node-list node-index)]
-         [nao (ao (nbra node))]
-         [nbo (bo (nbrb node))
+  (let* ([node (node-list-ref node-index node-list)]
+         [nao (ao (nbra node-index node-list))]
+         [nbo (bo (nbrb node-index node-list))]
+         [nco (co (nbrc node-index node-list))])
+    (append node (list nao nbo nco))))
