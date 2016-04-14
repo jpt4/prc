@@ -272,23 +272,33 @@ Init:
 => end-activation
 
 ;;stem-process-standard-signal
-(stem mem '() '() '() ai bi ci 0 0 0 nao nbo nco)
+;no hig set, input not zeroes
+(stem mem '() '() '() ~{0 0 0} 0 0 0 nao nbo nco)
 -> (stem mem {ai bi ci} '() '() 0 0 0 0 0 0 nao nbo nco)
 => end-activation
 
-(stem mem ~{ai bi ci} {{ 0 0 0} ... { 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
--> (stem mem ~{ai bi ci} {{ 0 0 0 0} ... { 1 1 1 0}} '() ai bi ci 0 0 0 nao nbo nco)
+;hig set, buffer not filled, input doesn't match
+(stem mem ~{0 0 0} {{0} ... {1 1 1}} '() ~{hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 0} ... {1 1 1 0}} '() 0 0 0 0 0 0 nao nbo nco)
 => end-activation
 
-(stem mem {ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
--> (stem mem {ai bi ci} {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+;hig set, buffer not filled, input does match 
+(stem mem ~{0 0 0} {{0} ... {1 1 1}} '() {hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 1} ... {1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
 => end-activation
 
-(stem mem ~{ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
--> (stem mem ~{ai bi ci} {{0 0 0 0 0} ... {1 1 1 1 0}} '() ai bi ci 0 0 0 nao nbo nco)
+;hig set, buffer filled, input doesn't match
+(stem mem ~{0 0 0} {{0 0 0 0} ... {1 1 1 1}} '() ~{hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 0 0 0 0} ... {1 1 1 1 0}} '() 0 0 0 0 0 0 nao nbo nco)
 => process-buffer
 
-(stem mem {ai bi ci} {{0 0 0 0} ... {1 1 1 1}} '() ai bi ci 0 0 0 nao nbo nco)
--> (stem mem {ai bi ci} {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+;hig set, buffer filled, input does match
+(stem mem ~{0 0 0} {{0 0 0 0} ... {1 1 1 1}} '() {hig} 0 0 0 nao nbo nco)
+-> (stem mem '() {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
 => process-buffer
 
+;;process-buffer
+;32 cases of (target, message) pairs
+(stem mem hig {0 0 0 0 0} '() 0 0 0 0 0 0 nao nbo nco)
+-> (stem mem hig '() '(stem-init) 0 0 0 0 0 0 nao nbo nco)
+=> stem-init
