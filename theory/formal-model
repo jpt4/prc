@@ -299,6 +299,20 @@ Init:
 
 ;;process-buffer
 ;32 cases of (target, message) pairs
-(stem mem hig {0 0 0 0 0} '() 0 0 0 0 0 0 nao nbo nco)
--> (stem mem hig '() '(stem-init) 0 0 0 0 0 0 nao nbo nco)
-=> stem-init
+(stem mem hig '(0 0 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(0 1 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(1 0 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(1 1 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+-> (stem mem hig '() {special-message} 0 0 0 0 0 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 {special-message} 0 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 0 {special-message} 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 0 0 {special-message} nao nbo nco)
+=> {special-message}
+   end-activation
+   end-activation
+   end-activation
+
+;;stem-init
+(stem mem hig '() '(stem-init) 0 0 0 0 0 0 nao nbo nco)
+-> (stem 0 '() '() '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
