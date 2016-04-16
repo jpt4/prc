@@ -242,16 +242,25 @@ Init:
 
 ;;process-standard-signal
 (stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
--> (stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
-=> stem-process-standard-signal
-
 (wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
--> (wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
-=> wire-process-standard-signal
-
 (proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
--> (proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
-=> proc-process-standard-signal
+-> (stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+   (wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+   (proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> stem-process-standard-signal
+   wire-process-standard-signal
+   proc-process-standard-signal
+
+;;process-special-message
+(wire mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+(proc mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+(stem mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+-> (wire mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+   (proc mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+   (stem mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+=> {special-message}
+   {special-message}
+   {special-message}
 
 ;;wire-process-standard-signal
 (wire 0 hig buf '() ai bi ci 0 0 0 nao nbo nco)
@@ -307,10 +316,15 @@ Init:
    (stem mem hig '() '() 0 0 0 {special-message} 0 0 nao nbo nco)
    (stem mem hig '() '() 0 0 0 0 {special-message} 0 nao nbo nco)
    (stem mem hig '() '() 0 0 0 0 0 {special-message} nao nbo nco)
+=> {stem-process-special-message}
+   end-activation
+   end-activation
+   end-activation
+
+;;stem-process-special-message
+(stem mem hig '() {special-message} 0 0 0 0 0 0 nao nbo nco)
+-> (stem mem hig '() '() 0 0 0 0 0 0 nao nbo nco)
 => {special-message}
-   end-activation
-   end-activation
-   end-activation
 
 ;;stem-init
 (stem mem hig '() '(stem-init) 0 0 0 0 0 0 nao nbo nco)
