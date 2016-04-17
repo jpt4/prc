@@ -19,9 +19,19 @@
 (define (mk-uc-node r m h b s ai bi ci ao bo co)
   (list r m h b s ai bi ci ao bo co))
 
+(define (get? field cell)
+  (list-ref cell (list-index universal-cell-fsm-prototype field)))
+
 (define (mk-uc-fsm node-index node-list)
   (let* ([node (node-list-ref node-index node-list)]
          [nao (ao (nbra node-index node-list))]
          [nbo (bo (nbrb node-index node-list))]
          [nco (co (nbrc node-index node-list))])
     (append node (list nao nbo nco))))
+
+(define (activate cell) cell)
+
+(define (check-output cell)
+  (let ([output (list (get? 'ao cell) (get? 'bo cell) (get? 'co cell))])
+    
+    
