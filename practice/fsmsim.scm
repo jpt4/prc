@@ -22,6 +22,10 @@
 (define (get? field cell)
   (list-ref cell (list-index universal-cell-fsm-prototype field)))
 
+(define (clear? ls) (and-map zero? ls))
+(define (present? ls) (and (not (empty? ls)) (not (clear? ls))))
+(define empty? null?)
+
 (define (mk-uc-fsm node-index node-list)
   (let* ([node (node-list-ref node-index node-list)]
          [nao (ao (nbra node-index node-list))]
@@ -29,9 +33,36 @@
          [nco (co (nbrc node-index node-list))])
     (append node (list nao nbo nco))))
 
-(define (activate cell) cell)
+(define (activate cell) (cons 'check-input cell))
 
+;;SMB can apply regardless of output status.
+
+(define (check-input cell)
+  (let ([input (list (get? 'smb cell) 
+                     (get? 'ai cell) (get? 'bi cell) (get? 'ci cell))])
+    (cond
+     [(clear? input) (cons 'collect-input cell)]
+     [(present? input) (cons 'check-output cell)])))
+
+(define (collect-input cell)
+  (let ([new-input (list (get? 'nao cell) (get? 'nbo cell) (get? 'nco cell))])
+    (cond
+     [(clear? new-input) (cons 'end-activation cell)]
+     [(present? new-input) (cons 'check-output cell)])))
+                         
 (define (check-output cell)
   (let ([output (list (get? 'ao cell) (get? 'bo cell) (get? 'co cell))])
+    (cond
+     [(clear? output) (append 'classify-input cell)]
+     [(present output) (cons 'end-activation cell)])))
+
+;we have some actionable input, and output is
+(define (classify-input cell)
+  (let ([non-smb-input
+         (list (get? 'ai cell) (get? 'bi cell) (get? 'ci cell))])
+    (cond
+     [(and (clear? (get? 'smb cell)) (clear? 
+      
+    
     
     
