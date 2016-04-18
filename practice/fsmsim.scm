@@ -50,8 +50,21 @@
 (define (clear? ls) (and-map zero? ls))
 (define (present? ls) (and (not (empty? ls)) (not (clear? ls))))
 (define empty? null?)
-(define (special-message? m) (member m special-messages))
+(define (special-message? mls) 
+  (cond
+   [(pair? mls)
+    (and-map 
+     (lambda (m) (exactly? 1 (lambda (l) (member m l)) special-messages))
+     mls)]
+   [
+    (and-map (lambda (e) (not (eq? 
+      (member m special-messages)))
 ;;;utilities
+(define (exactly? num fn ls)
+  (let ([fil (filter fn ls)])
+    (if (eq? (length fil) num)
+        fil
+        #f)))
 (define (zip lsa lsb)
   (map (lambda (e) (list (list-ref lsa e)
                          (list-ref lsb e)))
@@ -59,7 +72,6 @@
 
 ;;;annotated cell->cell functions
 (define (activate cell) (cons 'check-mail cell))
-
 ;;SMB can apply regardless of output status; mail is non-blocking input
 (define (check-mail cell)
   (let ([mail (peek 'smb cell)])
@@ -71,27 +83,29 @@
   (let ([input (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell))])
     (cond
      [(clear? input) (cons 'collect-input cell)]
-     [(present? input) (cons 'check-output cell)])))
+     [(present? input) (cons 'classify-input cell)])))
 
 (define (collect-input cell)
   (let* ([new-input (list (peek 'nao cell) (peek 'nbo cell) (peek 'nco cell))]
-         [new-cell )
+         [new-cell (poke* cell '((nao 0) (nbo 0) (nco 0)))]
     (cond
-     [(clear? new-input) (cons 'end-activation cell)]
-     [(present? new-input) (cons 'classify-input cell)])))
-
-;we have some actionable non-smb input
+     [(clear? new-input) (cons 'end-activation new-cell)]
+     [(present? new-input) (cons 'classify-input new-cell)])))
+                         
+;;we have some actionable non-smb input
 (define (classify-input cell)
   (let ([input (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell))])
     (cond
-     [(special-message? input) (cons 'process-special-message cell) 
-                         
+     [(special-message? input) 
+      (cons 'process-special-message cell)] ;output irrelevant
+     [(standard-signal? input) (cons 'check-output cell)]
+
 (define (check-output cell)
   (let ([output (list (peek 'ao cell) (peek 'bo cell) (peek 'co cell))])
     (cond
-     [(clear? output) (append 'classify-input cell)]
-     [(present output) (cons 'end-activation cell)])))
-
+     [(clear? output) (cons 'process-standard-signal cell)] 
+     [(present? output) ;standard input blocks if output present
+      (cons 'end-activation cell)])))
       
     
     
