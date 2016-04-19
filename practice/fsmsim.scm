@@ -26,7 +26,7 @@
          [nco (co (nbrc node-index node-list))])
     (append node (list nao nbo nco))))
 
-;;;get
+;;;get primitives
 (define (peek cell field . s)
   (if (null? s)
       (list-ref cell (list-index universal-cell-fsm-prototype field))
@@ -37,7 +37,7 @@
              (list-ref cell (list-index universal-cell-fsm-prototype e)))
            fields)
       (peek cell fields)))
-;;;set  
+;;;set primitives
 (define (poke cell field val)
   (let ([pivot (list-index universal-cell-fsm-prototype field)])
     (append (list-head cell pivot) (list val) (list-tail cell (+ 1 pivot)))))
@@ -46,19 +46,29 @@
       (poke cell (car fvls) (cadr fvls))
       (map (lambda (e) (if (eq? (car e) (car fvls)) (cadr fvls) (cadr e)))
            (zip universal-cell-fsm-prototype cell))))      
+;;common access patterns
+(define (get-input cell) 
+  (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell)))
+(define (clear-input cell) (poke* cell '((ai 0) (bi 0) (ci 0))))  
+
 ;;;input predicates
 (define (clear? ls) (and-map zero? ls))
 (define (present? ls) (and (not (empty? ls)) (not (clear? ls))))
 (define empty? null?)
-(define (special-message? mls) 
+(define (special? mls) 
   (cond
-   [(pair? mls)
-    (and-map 
-     (lambda (m) (exactly? 1 (lambda (l) (member m l)) special-messages))
-     mls)]
-   [
-    (and-map (lambda (e) (not (eq? 
-      (member m special-messages)))
+   [(eq? (length mls) 3)
+    (let* ([lsa (cartesian-power special-messages '(0) '(0))]
+           [lsb (map (lambda (a) (list-rotate a 1)) lsa)] 
+           [lsc (map (lambda (b) (list-rotate b 1)) lsb)] 
+           [lst (cons (lsa (cons lsb lsc)))])
+      (exactly? 1 (lambda (l) (member mls l)) lst))]
+   [(not (pair? mls)) (member mls special-messages)]))
+(define (standard? sls)
+  (let ([lss (rember '(0 0 0) (cartesian-power '(1 0) '(1 0) '(1 0)))])
+    (exactly? 1 (lambda (l) (eq? sls l)) lss)))
+(define (bad? bls) (not (xor (standard? bls) (special? bls))))
+    
 ;;;utilities
 (define (exactly? num fn ls)
   (let ([fil (filter fn ls)])
@@ -77,7 +87,7 @@
   (let ([mail (peek 'smb cell)])
     (cond
      [(empty? mail) (cons 'check-input cell)]
-     [(special-message? mail) (cons 'process-special-message cell)])))
+     [(special? mail) (cons 'process-special-message cell)])))
 
 (define (check-input cell)
   (let ([input (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell))])
@@ -94,11 +104,12 @@
                          
 ;;we have some actionable non-smb input
 (define (classify-input cell)
-  (let ([input (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell))])
-    (cond
-     [(special-message? input) 
+  (let ([input (get-input cell)])
+    (cond5C
+     [(special? input) 
       (cons 'process-special-message cell)] ;output irrelevant
-     [(standard-signal? input) (cons 'check-output cell)]
+     [(standard? input) (cons 'check-output cell)]
+     [(bad? input) (cons 'end-activation (clear-input cell))])))
 
 (define (check-output cell)
   (let ([output (list (peek 'ao cell) (peek 'bo cell) (peek 'co cell))])
