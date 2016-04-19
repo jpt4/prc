@@ -68,7 +68,7 @@
    [(and (pair? (car ls)) (null? (cdar ls)))
     (unpack-aux (cdr ls) (cons (caar ls) acc))]
    [else (cons (car ls) (unpack-aux (cdr ls) acc))]))
-
+;;XXBroken (xor #t #f) => #f
 (define (xor a . b) 
   (cond
    [(and (null? a) (null? b)) #f]

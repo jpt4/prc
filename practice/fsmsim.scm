@@ -47,9 +47,17 @@
       (map (lambda (e) (if (eq? (car e) (car fvls)) (cadr fvls) (cadr e)))
            (zip universal-cell-fsm-prototype cell))))      
 ;;common access patterns
+(define (clear-input cell) (poke* cell '((ai 0) (bi 0) (ci 0))))
 (define (get-input cell) 
-  (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell)))
-(define (clear-input cell) (poke* cell '((ai 0) (bi 0) (ci 0))))  
+  (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell)))  
+(define (right-rotate-input cell)
+  (let* ([ai (peek cell 'ai)] [bi (peek cell 'bi)] [ci (peek cell 'ci)])
+    (poke* cell (list (pair 'ao ci) (pair 'bo ai) (pair 'co 'bi)))))
+(define (left-rotate-input cell)
+  (let* ([ai (peek cell 'ai)] [bi (peek cell 'bi)] [ci (peek cell 'ci)])
+    (poke* cell (list (pair 'ao bi) (pair 'bo ci) (pair 'co 'ai)))))
+(define (switch-mem cell)
+  (poke cell 'mem (abs (- (peek cell 'mem) 1))))
 
 ;;;input predicates
 (define (clear? ls) (and-map zero? ls))
@@ -67,7 +75,8 @@
 (define (standard? sls)
   (let ([lss (rember '(0 0 0) (cartesian-power '(1 0) '(1 0) '(1 0)))])
     (exactly? 1 (lambda (l) (eq? sls l)) lss)))
-(define (bad? bls) (not (xor (standard? bls) (special? bls))))
+(define (bad? bls) 
+  (not (exactly? 1 true? `(,(standard? bls) ,(special? bls)))))
     
 ;;;utilities
 (define (exactly? num fn ls)
@@ -75,6 +84,8 @@
     (if (eq? (length fil) num)
         fil
         #f)))
+(define (pair a b) (list a b))
+(define (true? t) (eq? #t t))
 (define (zip lsa lsb)
   (map (lambda (e) (list (list-ref lsa e)
                          (list-ref lsb e)))
@@ -90,7 +101,7 @@
      [(special? mail) (cons 'process-special-message cell)])))
 
 (define (check-input cell)
-  (let ([input (list (peek 'ai cell) (peek 'bi cell) (peek 'ci cell))])
+  (let ([input (get-input cell)])
     (cond
      [(clear? input) (cons 'collect-input cell)]
      [(present? input) (cons 'classify-input cell)])))
@@ -105,7 +116,7 @@
 ;;we have some actionable non-smb input
 (define (classify-input cell)
   (let ([input (get-input cell)])
-    (cond5C
+    (cond
      [(special? input) 
       (cons 'process-special-message cell)] ;output irrelevant
      [(standard? input) (cons 'check-output cell)]
@@ -117,7 +128,19 @@
      [(clear? output) (cons 'process-standard-signal cell)] 
      [(present? output) ;standard input blocks if output present
       (cons 'end-activation cell)])))
-      
-    
-    
-    
+
+(define (process-standard-signal cell)
+  (let* ([rol (peek cell 'rol)]
+         [input (get-input cell)])
+    (case rol
+     [(stem) (cons 'stem-process-standard cell)]
+     [(wire) (cons 'wire-process-standard cell)]
+     [(proc) (cons 'proc-process-standard cell)])))
+(define (wire-process-standard cell)
+  (cons 'end-activation 
+        (clear-input (case (peek cell 'mem)
+                       [(0) (right-rotate-input cell)]
+                       [(1) (left-rotate-input cell)]))))
+(define (proc-process-standard cell)
+  (cons 'end-activation (switch-mem (wire-process-standard-cell))))
+(define (stem-process-standard cell) '())
