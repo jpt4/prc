@@ -136,11 +136,45 @@
      [(stem) (cons 'stem-process-standard cell)]
      [(wire) (cons 'wire-process-standard cell)]
      [(proc) (cons 'proc-process-standard cell)])))
+
 (define (wire-process-standard cell)
   (cons 'end-activation 
         (clear-input (case (peek cell 'mem)
                        [(0) (right-rotate-input cell)]
                        [(1) (left-rotate-input cell)]))))
+
 (define (proc-process-standard cell)
   (cons 'end-activation (switch-mem (wire-process-standard-cell))))
-(define (stem-process-standard cell) '())
+
+(define (stem-process-standard cell) 
+  (let* ([input (get-input cell)] [hig (peek cell 'hig)] 
+         [buf (peek cell 'buf)])
+    (cond
+     [(empty? hig) (cons 'end-activation (poke cell 'hig get-input))]
+     [(and (>= (length buf) 0) (<= (length buf) 3))
+      (cons 'end-activation 
+            (clear-input (poke cell 'buf (cons buf (list 
+                                                    (case (eq? input hig)
+                                                      [(#t) 1] [(#f) 0]))))))]
+     [(eq? (length buf) 4) 
+      (cons 'stem-process-buffer 
+            (clear-input (poke cell 'buf (cons buf (list 
+                                                    (case (eq? input hig)
+                                                      [(#t) 1] [(#f) 0]))))))]
+     )))
+(define (stem-process-buffer cell)
+  (let* ([buf (peek cell 'buf)] [tar (list-head 2 buf)] 
+         [msg (list-ref (list-bin->dec (cddr buf)) special-messages)])
+    (cons 'end-activaion
+          (poke* cell `((buf '()) ,(list (cond 
+                                          [(eq? '(0 0) tar) 'smb]
+                                          [(eq? '(0 1) tar) 'ai]
+                                          [(eq? '(1 0) tar) 'bi]
+                                          [(eq? '(1 1) tar) 'ci])
+                                         msg))))))
+
+(define (process-special-message cell)
+  (let ([input (car (filter (lambda (i) (member i special-messages)) 
+                            (get-input cell)))])
+    (case input
+      [(stem-init) (
