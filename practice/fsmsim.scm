@@ -91,7 +91,7 @@
                          (list-ref lsb e)))
        (iota (length lsa))))
 
-;;;annotated cell->cell functions
+;;;cell->(next-state cell) functions
 (define (activate cell) (cons 'check-mail cell))
 ;;SMB can apply regardless of output status; mail is non-blocking input
 (define (check-mail cell)
@@ -156,7 +156,7 @@
             (clear-input (poke cell 'buf (cons buf (list 
                                                     (case (eq? input hig)
                                                       [(#t) 1] [(#f) 0]))))))]
-     [(eq? (length buf) 4) 
+     [(eq? (length buf) (- max-buffer-length 1))
       (cons 'stem-process-buffer 
             (clear-input (poke cell 'buf (cons buf (list 
                                                     (case (eq? input hig)
@@ -174,7 +174,12 @@
                                          msg))))))
 
 (define (process-special-message cell)
-  (let ([input (car (filter (lambda (i) (member i special-messages)) 
-                            (get-input cell)))])
-    (case input
-      [(stem-init) (
+  (let ([msg (if (null? (peek cell 'smb))
+                   (car (filter (lambda (i) (member i special-messages)) 
+                                (get-input cell)))
+                   (peek cell 'smb))])
+    (cons 'end-activation (eval `(,msg ,cell)))))
+
+(define (stem-init cell)
+  (poke* cell '((rol stem) (mem 0) (hig '()) (buf '()) (smb '()) 
+                (ai 0) (bi 0) (ci 0) (ao 0) (bo 0) (co 0))))
