@@ -325,3 +325,10 @@
          [base (cons p (map (lambda (i) (mk-hex-node i nbrls default-cell))
                             (iota (* rows cols))))])
     base))
+;;toroidal hex grid
+(define (mk-wrap-hex-grid rows cols default-cell)
+  (let* ([nbrls (mk-wrap-hex-neighbor-list rows cols)]
+         [p (list 'p '(_ _ _) 'perimeter-cell)]
+         [base (cons p (map (lambda (i) (mk-hex-node i nbrls default-cell))
+                            (iota (* rows cols))))])
+    base))
