@@ -332,3 +332,28 @@
          [base (cons p (map (lambda (i) (mk-hex-node i nbrls default-cell))
                             (iota (* rows cols))))])
     base))
+(define (mk-wrap-hex-neighbor-list rows cols)
+  (let ([grid (unpack (cartesian-product (iota rows) (iota cols)))])
+    (map
+     (lambda (e)
+       (let* ([r (car e)] [c (cadr e)] [i (+ (* r cols) c)])
+         (cond
+          [(even? c) ;point in even column?
+           (list i 
+                 (if (zero? c) (* (- cols 1) (+ r 1)) (west-index i)) ;left column?
+                 (if (or (zero? r) (equal? c (- cols 1))) ;bottom row/ 
+                                                       ;right column?
+                     (south-east-index i cols))
+                 (if (equal? c (- cols 1)) ;right-most column?
+                     'p 
+                     (north-east-index i)))]
+          [(odd? c) ;point in odd column?
+           (list i 
+                 (if (equal? c (- cols 1)) ;right-most column?
+                     'p
+                     (east-index i))
+                 (if (equal? r (- rows 1)) ;upper row?
+                     'p
+                     (north-west-index i cols))
+                 (south-west-index i))])))
+     grid)))
