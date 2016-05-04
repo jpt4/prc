@@ -49,5 +49,7 @@
   (begin
     (display uc-node-prototype) (newline)
     (display uc-asm-prototype) (newline)
+    (set-fields uc-asm-prototype ((node? rol?) 'stem) ((sta?) 'init)) 
+    (newline)
     ))
 
