@@ -14,7 +14,7 @@
 (define standard-signal 1) (define max-buffer-length 5)
 (define special-messages 
   (vector 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 
-          'write-buf-zero 'write-buf-one))
+          'zero 'one))
 
 ;;universal cell core (aka cell) state
 (define-immutable-record-type <uc-core>
@@ -78,16 +78,43 @@
            (? standard inp) (? empty out)))
      (set-fields asm 
                  [(asm-core? inp?) '()] 
-                 [(asm-core? out?) (list-rotate inp mem)])]    
+                 [(asm-core? out?) (rotate inp (+ 1 mem))])]
+    [($ <uc-asm> 'q0 (? empty pre) 
+        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+           (? standard inp) (? not-empty out)))
+     asm]
+    [($ <uc-asm> 'q0 (? not-empty pre) 
+        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+           (? empty inp) (? empty out)))
+     (set-fields asm 
+                 [(pre?) '()]
+                 [(asm-core? inp?) pre])]
+    [($ <uc-asm> 'q0 (? not-empty pre) 
+        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+           (? empty inp) (? not-empty out)))
+     (set-fields asm 
+                 [(pre?) '()]
+                 [(asm-core? inp?) pre])]
+    [($ <uc-asm> 'q0 (? not-empty pre) 
+        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+           (? standard inp) (? empty out)))
+     (set-fields asm 
+                 [(pre?) '()]
+                 [(asm-core? inp?) pre]
+                 [(asm-core? out?) (rotate inp (+ 1 mem))])]
+    [($ <uc-asm> 'q0 (? not-empty pre) 
+        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+           (? standard inp) (? not-empty out)))
+     asm]
     [_ 'halt]
     ))
 
-(define (asm-activate asm) (sta! asm 'init))  
 (define (empty v) (null? v))
 (define (not-empty v) (not (null? v)))
 (define (standard i) 
   (and (not (eq? '(_ _ _) i))
        (map (lambda (a) (or (eq? a 1) (eq? a 0) (eq? a '_))) i)))
+(define (rotate l n) (list-rotate l n))
 (define (list-rotate ls num)
 	(let* ([snum (modulo num (length ls))] ;sanitized shift value
 				 [new-head (list-tail ls (- (length ls) snum))]
@@ -105,25 +132,76 @@
 (define uc-asm-prototype
   (mk-uc-asm 'sta (list 'nao 'nbo 'nco) uc-core-prototype))
 
+(define (dispnl t) (begin (display t) (newline)))
+(define (dispnl* tls) 
+  (cond
+   [(and (pair? tls) (pair? (cdr tls))) 
+    (begin (for-each dispnl* (car tls)) (for-each dispnl* (cdr tls)))]
+   [(pair? tls) (for-each dispnl* (car tls))]
+   [else (dispnl tls)]))
+   
+
 (define (tests) 
   (begin
-    (display uc-core-prototype) (newline)
-    (display uc-node-prototype) (newline)
-    (display uc-asm-prototype) (newline)
-    (display (set-fields uc-core-prototype
-                         [(hig?) '(0 0 1)]
-                         [(buf?) '(1 1 1 1)]))
-    (newline)
-    (display (set-fields uc-node-prototype 
-                         [(nbrc?) 3]
-                         [(node-core? rol?) 'stem]))
-    (newline)
-    (display (set-fields uc-asm-prototype 
-                         [(asm-core? mem?) '1]
-                         [(sta?) 'init]))
-    (newline)
-    (display (asm-activate (sta! uc-asm-prototype 'activate)))
-    (newline)
-    (display (step (sta! uc-asm-prototype 'activate)))
-    (newline)
+    (dispnl* 
+     (list 
+      uc-core-prototype  uc-node-prototype uc-asm-prototype
+      (set-fields uc-core-prototype
+                  [(hig?) '(0 0 1)]
+                  [(buf?) '(1 1 1 1)])
+      (set-fields uc-node-prototype 
+                  [(nbrc?) 3]
+                  [(node-core? rol?) 'stem])
+      (set-fields uc-asm-prototype 
+                  [(asm-core? mem?) '1]
+                  [(sta?) 'init])
+      "0 0 0"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 0 '() '() '() '() '()))])
+        (list asm (step asm)))
+      "0 0 1"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 0 '() '() '() '() '(1 0 1)))])
+        (list asm (step asm)))
+      "0 1sr 0"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 0 '() '() '() '(1 0 1) '()))])
+        (list asm (step asm)))
+      "0 1sl 0"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 1 '() '() '() '(1 0 1) '()))])
+        (list asm (step asm)))
+      "0 1ns 0"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 1 '() '() '() '(_ _ _) '()))])
+        (list asm (step asm)))
+      "0 1 1"
+      (let ([asm (mk-uc-asm 'q0 '() 
+                            (mk-uc-core 'wire 0 '() '() '() '(1 0 1) '(0 0 _)))])
+        (list asm (step asm)))
+      "1 0 0"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 0 '() '() '() '() '()))])
+        (list asm (step asm)))
+      "1 0 1"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 0 '() '() '() '() '(1 1 1)))])
+        (list asm (step asm)))
+      "1 1sr 0"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 0 '() '() '() '(_ 1 1) '()))])
+        (list asm (step asm)))
+      "1 1sl 0"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 1 '() '() '() '(_ 1 1) '()))])
+        (list asm (step asm)))
+      "1 1ns 0"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 1 '() '() '() '(_ _ _) '()))])
+        (list asm (step asm)))
+      "1 1 1"
+      (let ([asm (mk-uc-asm 'q0 '(1 _ 0) 
+                            (mk-uc-core 'wire 0 '() '() '() '(1 1 1) '(0 0 0)))])
+        (list asm (step asm)))
+      ))           
     ))
