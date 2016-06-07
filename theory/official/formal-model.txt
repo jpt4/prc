@@ -1,0 +1,338 @@
+A mathematical formalization of the Universal Cell
+
+jpt4
+
+UTC20151024
+
+The hardware of a PRC machine must be equally formally specified as
+the software which it executes. Further, this formal model must
+provide complete "logical coverage" in the sense used by Null
+Convention Logic: every process of the hardware must be reflected in
+the model which describes it, such that the function of compositions
+of primitive hardware elements may be deduced from the composition of
+their formal descriptors.
+
+Intuitively, digital logic circuits transmit information by
+propagating signals between elements. Elements, e.g. gates, do not
+operate until a signal reaches them, nor affect other elements aside
+from sending signals. This implies an ordering to events that
+corresponds with spatial proximity: signals reach an element, are
+processed, and new ones repropagated. In this way, all effects are
+local, and can be determined by following a contiguous trace of prior
+causes where each successive step identifies a logical transformation
+with a transition in space.
+
+A Universal Cell has two primary operational modes: fixed and
+fluid. When fixed, a UC performs in the role for which it was
+configured during its last fluid phase. The current PRC model
+describes UCs as having two fixed roles, "wire" and "proc"
+(processor), and one fluid role, "stem", but the general formalism is
+extensible to other possibilities. Mathematically, the UC is a Mealy
+Machine - a Finite State Machine that reads and writes symbols.
+
+A UC in isolation:
+
+UC = {Q, q0, SIG, GAM, DEL}
+
+Q   := set of all possible UC states
+q0  := initial UC state
+SIG := set of input symbols
+GAM := set of output symbols
+DEL := transition function
+
+Cell Activation Flowchart:
+
+Upon activation, a cell checks if there exists input to process. If
+none, it pulls from its neighbors for potential input, emptying their
+adjacent output channels. If still none, the update ends. If input has
+been collected, cell behavior bifurcates on the basis of its current
+role. 
+
+Wire and proc role cells classify the input. If input is not
+recognizable as special or standard, e.g. by containing a mix of
+special messages and standard signals, or more than one special
+message, it is bad data: all input channels are cleared, and the
+update ends. If input is exactly one special message, the stem-init
+command, the cell adopts the stem role, clears its input and output
+channels, and the update ends. If input is exactly three standard
+signals, output channels are checked. If any output channel is full,
+the update ends. If all output channels are empty, the input is
+transferred from input to output channels according to the subset of
+the cell's RLEM rules governing signal redirection, and the update
+ends. A proc role cell further satisfies the memory update portion of
+the cell's RLEM rules, toggling its memory state.
+
+A stem role cell classifies the input. 
+
+
+Two means of wire/proc to stem communication:
+
+Constant time/number of signals, 5 bit command buffer:
+If none is currently specified, a standard signal of exactly one high
+value sets the A (001), B (010), or C (100) channel as the high
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as a appending a "1" to the command buffer or 2)
+if different, as appending a "0" to the command buffer.
+
+Variable time/signal count, 5 bit command counter:
+If none is specified, a standard signal of exactly one high value sets
+the A (001), B (010), or C (100) channel as the command selection
+rail. This property is set and the input consumed without modifying
+the command buffer. Any subsequent standard signal of exactly one high
+value is then interpreted either 1) if identical to the high rail
+designation signal, as incrementing the command counter by 1, or 2)
+
+Counter value: 
+
+0 - 7: 
+target: self
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+8 - 15: 
+target: A neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+16 - 23: 
+target: B neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+24 - 31: 
+target: C neighbor
+commands: {standard-signal stem-init wire-r-init wire-l-init
+           proc-r-init proc-l-init write-buf-zero write-buf-one}
+
+   (Activation)
+        |
+        |
+        #
+UPDATE-CELL-BEGIN
+        |
+        |
+        #
+   CHECK-INPUT-input=zeroed-#PULL-FOR-INPUT-input=zeroed-#UPDATE-CELL-END
+        |                         |                                 #
+        |                         |                                 |
+ input=non-zeroed          input=non-zeroed           PROCESS-BAD---+
+        |                         |                       #         |
+        +------------+------------+                      /          |
+                     |                              input=bad       |
+                     #                                 /            |
+                CHECK-ROLE-role=wire/proc-#CLASSIFY-INPUT           |
+                     |                       /         \            |
+                     |                      |      input=stem       |
+                 role=stem                  |           |           |
+                     |               input=standard     |           |
+                     |                      |           #           |
+                     |                      |       PROCESS-STEM----+
+                     #                      #                       |
+             STEM-CLASSIFY-INPUT     PROCESS-STANDARD-role=wire-----+
+            /        |          \           |                       |
+           |    input=special    |      role=proc---#MEM-FLIP-------+
+           |         |           |                                  |
+      input=standard |       input=bad--#PROCESS-BAD----------------+
+           |         #                                              |
+           |   STEM-PROCESS-SPECIAL---------------------------------+
+           #                                                        |
+     STEM-PROCESS-STANDARD------------------------------------------+
+
+
+PULL-FOR-INPUT:
+ai <- ao.nbra
+bi <- bo.nbrb
+ci <- co.nbrc
+{ao.nbra, bo.nbrb, co.nbrc} <- {0, 0, 0}
+if {ai, bi, ci} = {0, 0, 0}
+   then input <- zeroed
+   else input <- non-zeroed
+
+CLASSIFY-INPUT:
+standard = {0, 1} x {0, 1} x {0, 1}
+special = {0, 0, stem-init} | {0, stem-init, 0} | {stem-init, 0, 0}
+bad = {not(standard | special)}
+
+input = case {ai, bi, ci}
+             standard => standard
+             special  => special
+             bad      => bad
+
+
+FSM
+(* 3 2 7 32 7 10 10 10 10 10 10 10 10 10) = 9408000000000
+Node:
+Role x Memory x High-Pattern x Buffer x Self-mailbox x A-in x B-in x C-in
+     x A-out x B-out x C-out
+
+Cell:
+Role x Memory x High-Pattern x Buffer x Self-mailbox x A-in x B-in x C-in
+     x A-out x B-out x C-out 
+     x Neighbor-A-out x Neighbor-B-out x Neighbor-C-out
+
+(role memory high-pattern buffer self-mailbox
+      ai bi ci ao bo co nbrao nbrbo nbrco)
+
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+
+Default Initial:
+('stem 0 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
+
+Proc:
+Initial:
+('proc 0 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
+
+;;;Programs
+
+Init: 
+('stem 0/1 '() '() '() 0 0 0 0 0 0 0/1 0/1 0/1)
+
+;;activate
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+->
+(rol mem hig buf smb ai bi ci ao bo co nao nbo nco)
+=> check-for-output
+
+;;check-for-output
+(rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
+-> (rol mem hig buf smb ai bi ci 0 0 0 nao nbo nco)
+=> check-for-input
+
+(rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+-> (rol mem hig buf smb ai bi ci ~{0 0 0} nao nbo nco)
+=> collect-input
+
+;;collect-input
+(rol mem hig buf '() 0 0 0 ~{0 0 0} nao nbo nco)
+-> (rol mem hig buf '() nao nbo nco ~{0 0 0} 0 0 0)
+= end-activation
+
+(rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() nao nbo nco 0 0 0 0 0 0)
+=> classify-input
+
+;;check-for-input
+(rol mem hig buf special-message 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem buf hig special-message 0 0 0 0 0 0 nao nbo nco)
+=> process-special-message
+
+(rol mem hig buf '() ~{0 0 0} 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() ~{0 0 0} 0 0 0 nao nbo nco)
+=> classify-input
+
+(rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+=> collect-input
+
+;;classify-input
+(rol mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> process-standard-signal
+
+(rol mem hig buf '() special-message 0 0 0 0 0 nao nbo nco)
+(rol mem hig buf '() 0 special-message 0 0 0 0 nao nbo nco)
+(rol mem hig buf '() 0 0 special-message 0 0 0 nao nbo nco)
+-> (rol mem hig buf '() special-message 0 0 0 0 0 nao nbo nco)
+   (rol mem hig buf '() 0 special-message 0 0 0 0 nao nbo nco)
+   (rol mem hig buf '() 0 0 special-message 0 0 0 nao nbo nco)
+=> process-special-message
+
+(rol mem hig buf '() 0 0 0 0 0 0 0 0 0)
+-> (rol mem hig buf '() 0 0 0 0 0 0 0 0 0)
+=> end-activation
+
+;;process-standard-signal
+(stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+(wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+(proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+-> (stem mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+   (wire mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+   (proc mem hig buf '() {{0 0 1} ... {1 1 1}} 0 0 0 nao nbo nco)
+=> stem-process-standard-signal
+   wire-process-standard-signal
+   proc-process-standard-signal
+
+;;process-special-message
+(wire mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+(proc mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+(stem mem hig buf '() {{0 0 special-message} ... {special-message 0 0}} 0 0 0 nao nbo nco)
+-> (wire mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+   (proc mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+   (stem mem hig buf '() 0 0 0 0 0 0 nao nbo nco)
+=> {special-message}
+   {special-message}
+   {special-message}
+
+;;wire-process-standard-signal
+(wire 0 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (wire 0 hig buf '() 0 0 0 ci ai bi nao nbo nco)
+=> end-activation
+
+(wire 1 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (wire 1 hig buf '() 0 0 0 bi ci ai nao nbo nco)
+=> end-activation
+
+;;proc-process-standard-signal
+(proc 0 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (proc 1 hig buf '() 0 0 0 ci ai bi nao nbo nco)
+=> end-activation
+
+(proc 1 hig buf '() ai bi ci 0 0 0 nao nbo nco)
+-> (proc 0 hig buf '() 0 0 0 bi ci ai nao nbo nco)
+=> end-activation
+
+;;stem-process-standard-signal
+;no hig set, input not zeroes
+(stem mem '() '() '() ~{0 0 0} 0 0 0 nao nbo nco)
+-> (stem mem {ai bi ci} '() '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+;hig set, buffer not filled, input doesn't match
+(stem mem ~{0 0 0} {{0} ... {1 1 1}} '() ~{hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 0} ... {1 1 1 0}} '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+;hig set, buffer not filled, input does match 
+(stem mem ~{0 0 0} {{0} ... {1 1 1}} '() {hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 1} ... {1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+;hig set, buffer filled, input doesn't match
+(stem mem ~{0 0 0} {{0 0 0 0} ... {1 1 1 1}} '() ~{hig} 0 0 0 nao nbo nco)
+-> (stem mem hig {{0 0 0 0 0} ... {1 1 1 1 0}} '() 0 0 0 0 0 0 nao nbo nco)
+=> process-buffer
+
+;hig set, buffer filled, input does match
+(stem mem ~{0 0 0} {{0 0 0 0} ... {1 1 1 1}} '() {hig} 0 0 0 nao nbo nco)
+-> (stem mem '() {{0 0 0 0 1} ... {1 1 1 1 1}} '() 0 0 0 0 0 0 nao nbo nco)
+=> process-buffer
+
+;;process-buffer
+;32 cases of (target, message) pairs
+(stem mem hig '(0 0 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(0 1 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(1 0 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+(stem mem hig '(1 1 {{0 0 0} ... {1 1 0}}) '() 0 0 0 0 0 0 nao nbo nco)
+-> (stem mem hig '() {special-message} 0 0 0 0 0 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 {special-message} 0 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 0 {special-message} 0 nao nbo nco)
+   (stem mem hig '() '() 0 0 0 0 0 {special-message} nao nbo nco)
+=> {stem-process-special-message}
+   end-activation
+   end-activation
+   end-activation
+
+;;stem-process-special-message
+(stem mem hig '() {special-message} 0 0 0 0 0 0 nao nbo nco)
+-> (stem mem hig '() '() 0 0 0 0 0 0 nao nbo nco)
+=> {special-message}
+
+;;stem-init
+(stem mem hig '() '(stem-init) 0 0 0 0 0 0 nao nbo nco)
+-> (stem 0 '() '() '() 0 0 0 0 0 0 nao nbo nco)
+=> end-activation
+
+UTC20160518
+Binary logic {0 1} embedded in a background trinary symbol set {0 1 _}
+is necessary because 1 0... 1 is indistinguishable from 1 0...0 1 when
+delay is marked in 0s, and the delay between 1s can neither be
+regulated, nor relied upon to carry information.

@@ -1,0 +1,56 @@
+UTC20160607
+A wire cell permutes the state of the data structure: [nbo inp
+out]. At the coarsest grain, each field can be occupied (1), or
+unoccupied (1), yielding eight combinations. However, a wire only
+transparently routes well-formed standard signals (ss), and can be
+acted upon by certain special messages (sm) to change its role. Cells
+pull new input from their neighbors' outputs; shall they do so (1)
+only if their own output is clear, or (2) is the only restriction that
+their own input be clear? If (1), [NBO _ OUT] -> [NBO _ OUT], [NBO INP
+_] -> [NBO _ OUT], and [NBO INP OUT] is disallowed. If (2), [NBO _
+OUT] -> [_ NBO OUT], [NBO INP _] -> [NBO _ OUT], and [NBO INP OUT] is
+allowed. Either way, the interpreter must be disciplined enough to
+only allow single step state changes, i.e. in case (2), to not perform
+[NBO INP _] -> [_ INP OUT].
+
+(1) causes a wire cell to depend on the collection of its input by all
+three of its neighbors before it can accept new input, and so risks
+rolling congestion from a single OUT=[_ _ 0] in a chain. (2)
+effectively recruits each cell to act as a one stage buffer for each
+cell downstream, and allows special message handling (and thus
+reconfiguration) to occur without seeking the permission (requiring
+the co-ordination) of all of its neighbors. Negatively, a
+reconfiguration transition now either potentially incurs symbol loss,
+or must preserve the output state after the role change. However, that
+reduces to the same problem of case (1), transferring the congestion
+from sequences of wires to sequences of stem cells. Because
+reconfiguration decisions break symbol parity, and ought be carefully
+evaluated beforehand, it is congruent that their execution receive
+higher priority than preserving output for downstream
+cells. Therefore, in contrast to that stated in (jpt4, 2016,
+LambdaConf), but following older ideas present in formal-model.txt,
+option (2) will be implemented in asmsim.scm.
+
+
+UTC20160606 
+
+If a UC circuit begins with a fixed amount of entropy, and contains
+elements which consume it (stem cells), then it will grind to halt for
+lack of logic-supporting symbol signals. Thus, any practical
+reconfigurable UC matrix requires logical gain, and must contain a
+logical amplifier. This amplifier serves the circuit at the resolution
+of individual nodes; if it is composed of an aggregate of nodes,
+circuits within the matrix will suffer an impedance mismatch between
+their scale and the scale of a critical subcomponent. Thus, logical
+gain must be possible at the granularity of an individual
+cell. Specifically, the stem cell will be capable of logical
+amplification, and complement its role as sole consumer of entropy
+with that of sole producer.
+
+UTC20160526
+
+Difference between compile-to-hardware vs. high-level hardware. First
+has all-bespoke primitives, the circuit equivalents of higher level
+language expressions, the second primitives designed to interpret HLL
+expressions as native, analogous to native execution of machine
+code. Cross-over: compile to hardware an HLL interpreter.

@@ -1,0 +1,76 @@
+Thiel Fellowship Application Project Description 
+jpt4 
+UTC20151007
+
+Pervasively Reconfigurable Computing (PRC) collapses the dependency
+graph of computing to its root node.
+
+PRC's primary goal is to build a general purpose computer that suffers
+no further dependencies than the correct function of its primitive,
+homogeneous circuit elements, called "Universal Cells". PRC is thus
+similar, though independent in origin and motivation, to MIT's
+Reconfigurable Asynchronous Logic Automata project.
+
+Every UC must support:
+1. Reversible logic
+2. Asynchronous operation
+3. Explicit signal and power routing
+4. Organic reconfigurability
+
+The current realization of a PRC machine proposes a hexagonal lattice
+of Reversible Logic Elements with Memory. RLEMs are 3-port,
+reversible, asynchronous circuit primitives with one bit of
+per-element memory. Arranging these in a hexagonal lattice requires
+any circuit built upon them to be geometrically explicit - the wiring
+between elements must be as equally formally specified as the sequence
+of logic operations. With sub-byte-length per element message passing,
+each node can be re-programmed to act as a wire (routing), 1-bit
+processor (logic), or stem (reconfiguration) cell. Within the lattice,
+logical operations take the form of rotational redirections of
+incoming signals, depending on the current memory state of the
+cell. An associated memory state change can reverse the rotation
+of subsequent signals. Cells can be probed to determine their memory
+state by observing along which output terminal an incoming signal
+exits. Within a lattice, RLEMs unify the treatment of logic, routing,
+and memory.
+
+A switchable, latching, ferrite junction circulator is a passive
+electromagnetic radiation (EMR) circuit element with behavior
+correspondent to RLEMs; they act as rotary waveguides with
+electrically variable, and magnetically persistable,
+chirality. Circulators equipped with auxiliary electronics to process
+reconfiguration messages could implement hybrid electronic/EMR
+lattices of Universal Cells.
+
+PRC is the current refinement of two decades of interest in the
+mechanisms of cognitive entities. The project per se began upon
+deciding two years ago that a general purpose AI (the test platform of
+choice for cognition at the extremes) would be best served by
+embodied, introspective self-modifiability. It has since been my
+independent research effort, and an exemplar of Whorfian
+autodidactism: lacking formal training regarding digital circuitry
+(having previously inclined towards the abstract/philosophical
+elements of cognitive/computer science), progress regularly hinged on
+the appropriate within-discipline search term query.
+
+The project has rapidly codified in the past six months, with the
+establishment of a theoretical basis in RLEMs, and a physical analogue
+in EMR circulators. The main effort is currently dedicated to
+formalizing a modular, Mealy machine-style UC model, and programming a
+lattice simulator.
+
+Spaced logarithmically, salient deliverables include:
+
+1. Automatic derivation from mathematical lattices to equivalent code.
+
+2. Self-hosted, compile-to-UC programming language(s).
+
+3. Integrated UC manufacture of corporeal lattices.
+
+4. Seed-of-a-seed-of-a-seed test AI.
+
+As a revisionary project, the re-encapsulation of computing logistics
+through the lens of pervasive reconfigurability intersperses with
+these Schwerpunkts. The prospect, however, of a machine of one's own
+devising, and ultimately, its own devising, is as sufficient
+encouragement to persevere as it was to begin.
