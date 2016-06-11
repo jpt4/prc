@@ -65,66 +65,97 @@
 ;;state machine interpretation
 (define (step asm)
   (match asm
-    ;;wire standard signal
-    [($ <uc-asm> 'q0 (? empty pre) ;0 0 0 -> 0 0 0
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? empty inp) (? empty out)))
+    ;;proc/wire standard signal
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 0 -> 0 0 0
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? empty? inp) (? empty? out)))
      asm]
-    [($ <uc-asm> 'q0 (? empty pre) ;0 0 1ne -> 0 0 1ne
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? empty inp) (? not-empty out)))
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 1ne -> 0 0 1ne
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? empty? inp) (? not-empty? out)))
      asm]
-    [($ <uc-asm> 'q0 (? empty pre) ;0 1ss 0 -> 0 0 1ss
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? standard inp) (? empty out)))
+    ;;wire
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 0 -> 0 0 1ss
+        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (clear inp)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
-    [($ <uc-asm> 'q0 (? empty pre) ;0 1ss 1ne -> 0 1ss 1ne
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? standard inp) (? not-empty out)))
+    ;;proc
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 0 -> 0 0 1ss
+        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? standard inp) (? empty? out)))
+     (set-fields asm 
+                 [(asm-core? inp?) (clear inp)]
+                 [(asm-core? mem?) (switch mem)]
+                 [(asm-core? out?) (rotate inp (+ 1 mem))])]
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 1ne -> 0 1ss 1ne
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
+           (? empty? smb)
+           (? standard inp) (? not-empty? out)))
      asm]
-    [($ <uc-asm> 'q0 (? not-empty pre) ;1ne 0 0 -> 0 1ne 0
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? empty inp) (? empty out)))
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 0 0 -> 0 1ne 0
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
+           (? empty? smb)
+           (? empty? inp) (? empty? out)))
      (set-fields asm 
                  [(pre?) (clear pre)]
                  [(asm-core? inp?) pre])]
-    [($ <uc-asm> 'q0 (? not-empty pre) ;1ne 0 1ne -> 0 1ne 1ne 
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? empty inp) (? not-empty out)))
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 0 1ne -> 0 1ne 1ne 
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
+           (? empty? smb)
+           (? empty? inp) (? not-empty? out)))
      (set-fields asm 
                  [(pre?) (clear pre)]
                  [(asm-core? inp?) pre])]
-    [($ <uc-asm> 'q0 (? not-empty pre) ;1ne 1ss 0 -> 1ne 0 1ss
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? standard inp) (? empty out)))
+    ;;wire
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 1ne 0 1ss
+        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (clear inp)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
-    [($ <uc-asm> 'q0 (? not-empty pre) ;1ne 1ss 1ne -> 1ne 1ss 1ne
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
-           (? standard inp) (? not-empty out)))
+    ;;proc
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 1ne 0 1ss
+        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? standard inp) (? empty? out)))
+     (set-fields asm 
+                 [(asm-core? inp?) (clear inp)]
+                 [(asm-core? mem?) (switch mem)]
+                 [(asm-core? out?) (rotate inp (+ 1 mem))])]
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 1ne -> 1ne 1ss 1ne
+        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+           (? standard inp) (? not-empty? out)))
      asm]
-    ;;wire special signal
-    [($ <uc-asm> 'q0 pre ;wire: 0/1 1sm 0/1 -> stem: 0 0 0
-        ($ <uc-core> 'wire mem (? empty hig) (? empty buf) (? empty smb)
+    ;;proc/wire special signal
+    [($ <uc-asm> 'q0 pre ;proc/wire: 0/1 1sm 0/1 -> stem: 0 0 0
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
+           (? empty? smb)
            (? stem-init? inp) out))
      (set-fields asm
                  [(asm-core? rol?) 'stem] [(asm-core? mem?) 0] 
                  [(asm-core? inp?) (clear inp)] [(asm-core? out?) (clear out)]
                  )]
+    ;;stem
+    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 0 -> 0 0 0
+        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (empty? smb)
+           (? empty? inp) (? empty? out)))
+     asm]
     [_ 'halt]
     ))
 
-(define (empty v) (and-map (lambda (l) (eq? l '_)) v))
-(define (not-empty v) (not (empty v)))
+(define (empty? v) (and-map (lambda (l) (eq? l '_)) v))
+(define (not-empty? v) (not (empty? v)))
 (define (standard i) 
   (and (not (eq? '(_ _ _) i))
        (map (lambda (a) (or (eq? a 1) (eq? a 0) (eq? a '_))) i)))
-(define (special? i) (exactly? 1 (lambda (a) (member? a special-messages)) i))
-(define (stem-init? i) (exactly? 1 (lambda (a) (eq? a 'stem-init)) i))
+(define (special? i) 
+  (count-filter? 1 (lambda (a) (member a (vector->list special-messages))) i))
+(define (stem-init? i) (count-filter? 1 (lambda (a) (eq? a 'stem-init)) i))
+(define (switch m) (abs (- m 1)))
 (define (clear f) (map (lambda (a) '_) f))
+(define (count-filter f ls) (length (filter f ls)))
+(define (count-filter? n f ls) (eq? n (count-filter f ls)))
 (define (rotate l n) (list-rotate l n))
 (define (list-rotate ls num)
 	(let* ([snum (modulo num (length ls))] ;sanitized shift value
