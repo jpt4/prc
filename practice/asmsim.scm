@@ -66,6 +66,7 @@
 (define (step asm)
   (match asm
     ;;proc/wire standard signal
+    ;;[pre inp out] -> [pre inp out]
     [($ <uc-asm> 'q0 (? empty? pre) ;0 0 0 -> 0 0 0
         ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? empty? inp) (? empty? out)))
@@ -83,7 +84,7 @@
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
     ;;proc
     [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 0 -> 0 0 1ss
-        ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
+        ($ <uc-core> 'proc mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (clear inp)]
@@ -108,15 +109,15 @@
      (set-fields asm 
                  [(pre?) (clear pre)]
                  [(asm-core? inp?) pre])]
-    ;;wire
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 1ne 0 1ss
+    ;;wire - compound transition
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 0 1ne 1ss
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (clear inp)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
-    ;;proc
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 1ne 0 1ss
+    ;;proc - compound transition
+    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 0 1ne 1ss
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
@@ -136,13 +137,46 @@
                  [(asm-core? rol?) 'stem] [(asm-core? mem?) 0] 
                  [(asm-core? inp?) (clear inp)] [(asm-core? out?) (clear out)]
                  )]
-    ;;stem
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 0 -> 0 0 0
-        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (empty? smb)
+    ;;stem [pre hig buf smb inp out]
+    ;collect input
+    ;ne hig nf e e out -> e hig nf e pre out
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
+        ($ <uc-core> 'stem 0 hig (? not-full? buf) (? emtpy? smb)
+           (? empty? inp) out))
+     (set-fields asm
+                 [(pre?) (clear pre)] [(asm-core? inp?) pre])]
+    ;update buffer
+    ;pre ne nf e sss out -> e ne l<=5 pre out
+    [($ <uc-asm> 'q0 pre
+        ($ <uc-core> 'stem 0 (? not-empty? hig) (? not-full? buf) (? emtpy? smb)
+           (? single-standard-signal? inp) out))
+     (set-fields asm
+                 [(pre?) (clear pre)] [(asm-core? buf?) (update-buf hig inp)]
+                 [(asm-core? inp?) pre])]
+    ;respond to self-mail
+    ;pre e e ne e out -> (self-mail asm)
+    [($ <uc-asm> 'q0 pre
+        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (? not-emtpy? smb)
+           (? empty? inp) out))
+     (case (car smb)
+       [(set-fields asm
+                 [(pre?) (clear pre)] [(asm-core? inp?) pre])]
+    ;stem establish control rail 
+    ;pre e e e sss out -> pre inp e e e out
+    [($ <uc-asm> 'q0 pre
+        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (? emtpy? smb)
+           (? single-standard-signal? inp) out))
+     (set-fields asm
+                 [(inp?) (clear inp)] [(asm-core? inp?) pre])]    
+    [($ <uc-asm> 'q0 (? single-signal? pre) ;control signal 1 - 5
+        ($ <uc-core> 'stem 0 (= hig pre) (? buf) (empty? smb)
            (? empty? inp) (? empty? out)))
-     asm]
+     (set-fields asm
+                 [(pre?) (clear pre)] [(asm-core? hig?) pre])]
+                 
     [_ 'halt]
     ))
+
 
 (define (empty? v) (and-map (lambda (l) (eq? l '_)) v))
 (define (not-empty? v) (not (empty? v)))
