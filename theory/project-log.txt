@@ -54,3 +54,9 @@ has all-bespoke primitives, the circuit equivalents of higher level
 language expressions, the second primitives designed to interpret HLL
 expressions as native, analogous to native execution of machine
 code. Cross-over: compile to hardware an HLL interpreter.
+
+UTC20160518
+Binary logic {0 1} embedded in a background trinary symbol set {0 1 _}
+is necessary because 1 0... 1 is indistinguishable from 1 0...0 1 when
+delay is marked in 0s, and the delay between 1s can neither be
+regulated, nor relied upon to carry information.

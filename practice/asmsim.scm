@@ -65,44 +65,47 @@
 ;;state machine interpretation
 (define (step asm)
   (match asm
+    ;;[pre rol mem hig buf smb inp out] -> [pre rol mem hig buf smb inp out]
+    ;no-op
+    ;e rol mem hig not-full e e out -> e rol mem hig not-full e e out
+    [($ <uc-asm> 'q0 (? empty? pre) 
+        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
+           (? empty? smb) (? empty? inp) out))
+     asm]
     ;;proc/wire standard signal
-    ;;[pre inp out] -> [pre inp out]
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 0 -> 0 0 0
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) (? empty? smb)
-           (? empty? inp) (? empty? out)))
-     asm]
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 0 1ne -> 0 0 1ne
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) (? empty? smb)
-           (? empty? inp) (? not-empty? out)))
-     asm]
     ;;wire
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 0 -> 0 0 1ss
+    ;0 1ss 0 -> 0 0 1ss
+    [($ <uc-asm> 'q0 (? empty? pre) 
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (empty inp)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
     ;;proc
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 0 -> 0 0 1ss
+    ;0 1ss 0 -> 0 0 1ss
+    [($ <uc-asm> 'q0 (? empty? pre) 
         ($ <uc-core> 'proc mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (empty inp)]
                  [(asm-core? mem?) (switch mem)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
-    [($ <uc-asm> 'q0 (? empty? pre) ;0 1ss 1ne -> 0 1ss 1ne
+    ;0 1ss 1ne -> 0 1ss 1ne
+    [($ <uc-asm> 'q0 (? empty? pre) 
         ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
            (? empty? smb)
            (? standard inp) (? not-empty? out)))
      asm]
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 0 0 -> 0 1ne 0
+    ;1ne 0 0 -> 0 1ne 0
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
         ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
            (? empty? smb)
            (? empty? inp) (? empty? out)))
      (set-fields asm 
                  [(pre?) (empty pre)]
                  [(asm-core? inp?) pre])]
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 0 1ne -> 0 1ne 1ne 
+    ;1ne 0 1ne -> 0 1ne 1ne 
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
         ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
            (? empty? smb)
            (? empty? inp) (? not-empty? out)))
@@ -110,26 +113,30 @@
                  [(pre?) (empty pre)]
                  [(asm-core? inp?) pre])]
     ;;wire - compound transition
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 0 1ne 1ss
+    ;1ne 1ss 0 -> 0 1ne 1ss
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (empty inp)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
     ;;proc - compound transition
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 0 -> 0 1ne 1ss
+    ;1ne 1ss 0 -> 0 1ne 1ss
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? empty? out)))
      (set-fields asm 
                  [(asm-core? inp?) (empty inp)]
                  [(asm-core? mem?) (switch mem)]
                  [(asm-core? out?) (rotate inp (+ 1 mem))])]
-    [($ <uc-asm> 'q0 (? not-empty? pre) ;1ne 1ss 1ne -> 1ne 1ss 1ne
+    ;1ne 1ss 1ne -> 1ne 1ss 1ne
+    [($ <uc-asm> 'q0 (? not-empty? pre) 
         ($ <uc-core> 'wire mem (? empty? hig) (? empty? buf) (? empty? smb)
            (? standard inp) (? not-empty? out)))
      asm]
-    ;;proc/wire special signal
-    [($ <uc-asm> 'q0 pre ;proc/wire: 0/1 1sm 0/1 -> stem: 0 0 0
+    ;;proc/wire stem-init signal
+    ;pre p/w mem stem? out -> pre 'stem 0 e e
+    [($ <uc-asm> 'q0 pre 
         ($ <uc-core> (or 'proc 'wire) mem (? empty? hig) (? empty? buf) 
            (? empty? smb)
            (? stem-init? inp) out))
@@ -141,30 +148,30 @@
     ;collect input
     ;ne hig nf e e out -> e hig nf e pre out
     [($ <uc-asm> 'q0 (? not-empty? pre) 
-        ($ <uc-core> 'stem 0 hig (? not-full? buf) (? emtpy? smb)
+        ($ <uc-core> 'stem 0 hig (? not-full? buf) (? empty? smb)
            (? empty? inp) out))
      (set-fields asm
                  [(pre?) (empty pre)] [(asm-core? inp?) pre])]
     ;establish control rail 
     ;pre e e e sss out -> pre inp e e e out
     [($ <uc-asm> 'q0 pre
-        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (? emtpy? smb)
+        ($ <uc-core> 'stem 0 (? empty? hig) (? empty? buf) (? empty? smb)
            (? single-standard-signal? inp) out))
      (set-fields asm
                  [(inp?) (empty inp)] [(asm-core? inp?) pre])]   
     ;non-final buffer update
-    ;pre ne <(full-1) e sss out -> e ne <=(full - 1) pre out
+    ;pre ne <(full - 1) e sss out -> e ne <=(full - 1) pre out
     [($ <uc-asm> 'q0 pre
-        ($ <uc-core> 'stem 0 (? not-empty? hig) (? not-full? buf) (? emtpy? smb)
-           (? single-standard-signal? inp) out))
+        ($ <uc-core> 'stem 0 (? not-empty? hig) (? not-full? buf) 
+           (? emtpy? smb) (? single-standard-signal? inp) out))
      (set-fields asm
                  [(pre?) (empty pre)] [(asm-core? buf?) (update-buf hig inp)]
                  [(asm-core? inp?) pre])]
     ;final buffer update
     ;pre ne (full - 1) e sss out -> pre ne full e e out
     [($ <uc-asm> 'q0 pre
-        ($ <uc-core> 'stem 0 (? not-empty? hig) (? full-less-one? buf) (? emtpy? smb)
-           (? single-standard-signal? inp) out))
+        ($ <uc-core> 'stem 0 (? not-empty? hig) (? full-less-one? buf) 
+           (? emtpy? smb) (? single-standard-signal? inp) out))
      (set-fields asm
                  [(asm-core? buf?) (update-buf hig inp)]
                  [(asm-core? inp?) (empty inp)])]
@@ -181,17 +188,17 @@
            (? empty? inp) (? empty? out)))
      (process-smb asm smb)]
     ;process special message
-    ;pre stem 0 hig buf e ssp e -> pre (p inp) (p inp) e e e e (p smb)
+    ;pre stem 0 hig buf e sp e -> pre (p inp) (p inp) e e e e (p smb)
     [($ <uc-asm> 'q0 pre
         ($ <uc-core> 'stem 0 hig buf (? empty? smb)
-           (? single-special-message? inp) (? empty? out)))
+           (? special? inp) (? empty? out)))
      (process-special-message asm inp)]
     [_ 'halt]
     ))
 
-
 (define (empty? v) (and-map (lambda (l) (eq? l '_)) v))
 (define (not-empty? v) (not (empty? v)))
+(define (not-full? buf) (< (length buf) max-buffer-length))
 (define (standard i) 
   (and (not (eq? '(_ _ _) i))
        (map (lambda (a) (or (eq? a 1) (eq? a 0) (eq? a '_))) i)))
@@ -229,7 +236,7 @@
    [(and (pair? tls) (null? (cdr tls))) (dispnl* (car tls))]
    [else (dispnl tls)]))
    
-
+;;test suite
 (define (tests) 
   (begin
     (dispnl* 

@@ -2,6 +2,126 @@ A mathematical formalization of the Universal Cell
 
 jpt4
 
+UTC20160622 - UTC20160625 
+Note: Experimenting with stack-appended updates
+
+asm data structure
+[ups inp out smb rol mem ctl buf]
+ups - upstream neighbor output values
+inp - input channel values
+out - output channel values
+smb - self-mailbox (optional input only value for special messages)
+rol - role; wire, proc (processor) or stem cell
+mem - memory state; 0 (right rotation) or 1 (left rotation)
+ctl - control channel; A (0), B (1), or C (2)
+buf - buffer for stem ops, constructed from bit-sliced control inputs
+
+default values
+[(_ _ _) (_ _ _) (_ _ _) () stem 0 () ()]
+ups, inp, and out values are distinguishable intra-channel as binary
+(0,1), thus they must be embedded in a background trinary value set
+with an explicit empty symbol (_).
+
+smb, ctl, and buf are not persistent channels, and thus are implicitly
+empty when null-valued.
+
+rol has no null value; all cells begin as stem. The cell default is also
+the stem cell default.
+
+transitions
+fixed fields can only be modified as a result of special messages.
+flex fields are immediately modified by standard signals.
+
+Field labels (rol, mem, etc.) refer to the value held by the field on the
+LHS of a transition rule.
+
+wire
+fixed:
+  smb () 
+  rol wire
+  mem 0/1
+  ctl ()
+  buf ()
+flex:
+  [ups inp out]
+
+a  := per field, any valid value
+c  := clear, ()
+e  := empty, (_ _ _)
+ne := not-empty
+ss := standard signal
+sp := special message
+
+standard signal
+[e e e]    ->  [e e e]
+[e e ne]   ->  [e e ne]
+[e ss e]   ->  [e (clear inp) (rotate mem inp)]
+[e ss ne]  ->  [e ss ne]
+[ne e e]   ->  [(clear ups) e e]
+[ne e ne]  ->  [(clear ups) ups:ne ne]
+[ne ss e]  ->  [ne (clear inp) (rotate mem inp)]
+[ne ss ne] ->  [ne ss ne]
+special message ;;potentially relax to [a sp a]
+[a sp e]   ->  (process-special rol inp) 
+
+proc
+fixed:
+  smb () 
+  rol wire
+  ctl ()
+  buf ()
+flex:
+  [ups inp out mem]
+
+standard signal
+[e e e a]    ->  [e e e a]
+[e e ne a]   ->  [e e ne a]
+[e ss e a]   ->  [e (clear inp) (rotate mem inp) (switch mem)]
+[e ss ne a]  ->  [e ss ne a]
+[ne e e a]   ->  [(clear ups) e e a]
+[ne e ne a]  ->  [(clear ups) e ne a]
+[ne ss e a]  ->  [ne (clear inp) (rotate mem inp) (switch mem)]
+[ne ss ne a] ->  [ne ss ne a]
+special message ;;potentially relax to [a sp a a]
+[a sp e a]   ->  (process-special rol inp) 
+
+stem
+fixed:
+  rol stem
+  mem 0
+flex:
+  [ups inp out smb ctl buf]
+
+sss   := single standard signal
+<full := buffer less than full
+full  := buffer full
+pat   := pattern to amplify
+self  := token indicating under self control
+
+standard signal
+nop
+[e e e c c c]        ->  [e e e c c c]
+acquire input
+[ne e e c a <full]   ->  [(clear ups) ups:ne e c a <full]
+set control rail
+[a sss e c c c]      ->  [a (clear inp) e c (set-ctl inp) c]
+write to buffer
+[a sss e c ne <full] ->  [a (clear inp) e c ne (write-buf inp buf)]
+process full buffer
+[a e e c ne full]    ->  [a e (process-buf buf) (process-buf buf) 
+                          (clear ctl) (process-buf buf)]
+logical amplifier - first tranche
+[a e ne c self pat] ->  [a e ne c self pat]
+logical amplifier - second tranche
+[a e e c self pat]  ->  [a e buf:pat c self (clear buf)]
+[a e ne c self c]   ->  [a e ne c self c]
+logical amplifier - finished
+[a e e c self c]    ->  [a e e c (clear ctl) c]
+
+special message
+[a sp e c c c]  ->  (process-special rol inp)
+[a e e sp c c]  ->  (process-smb inp)
+
 UTC20151024
 
 The hardware of a PRC machine must be equally formally specified as
@@ -331,8 +451,3 @@ Init:
 -> (stem 0 '() '() '() 0 0 0 0 0 0 nao nbo nco)
 => end-activation
 
-UTC20160518
-Binary logic {0 1} embedded in a background trinary symbol set {0 1 _}
-is necessary because 1 0... 1 is indistinguishable from 1 0...0 1 when
-delay is marked in 0s, and the delay between 1s can neither be
-regulated, nor relied upon to carry information.
