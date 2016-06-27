@@ -48,7 +48,7 @@ flex:
 a  := per field, any valid value
 c  := clear, ()
 e  := empty, (_ _ _)
-ne := not-empty
+ne := non-empty, =/= (_ _ _)
 ss := standard signal
 sp := special message
 
@@ -57,7 +57,7 @@ standard signal
 [e e ne]   ->  [e e ne]
 [e ss e]   ->  [e (clear inp) (rotate mem inp)]
 [e ss ne]  ->  [e ss ne]
-[ne e e]   ->  [(clear ups) e e]
+[ne e e]   ->  [(clear ups) ups:ne e]
 [ne e ne]  ->  [(clear ups) ups:ne ne]
 [ne ss e]  ->  [ne (clear inp) (rotate mem inp)]
 [ne ss ne] ->  [ne ss ne]

@@ -63,12 +63,32 @@
 ;;state machine interupstation
 (define (step asm)
   (match asm
+    ;;wire     
     [($ <uc-asm> ups ($ <uc-core> inp out smb 'wire mem ctl buf))
      (let ([flex-fields (list ups inp out)])
        (match flex-fields
          [((? empty? u) (? empty? i) (? empty? o))
-          
-         ))
+          asm]
+         [((? empty? u) (? empty? i) (? non-empty? o))
+          asm]
+         [((? empty? u) (? standard-signal? i) (? empty? o))
+          (set-fields asm [(asm-core inp) (empty inp)] [(asm-core out) inp])]
+         [((? empty? u) (? standard-signal? i) (? non-empty? o))
+          asm]
+         [((? non-empty? u) (? empty? i) (? empty? o))
+          (set-fields asm [(asm-core ups) (empty ups)] [(asm-core inp) ups])]
+         [((? non-empty? u) (? empty? i) (? non-empty? o))
+          (set-fields asm [(asm-core ups) (empty ups)] [(asm-core inp) ups])]
+         [((? non-empty? u) (? standard-signal? i) (? empty? o))
+          (set-fields asm [(asm-core inp) (empty inp)] [(asm-core out) inp])]
+         [((? non-empty? u) (? standard-signal? i) (? non-empty? o))
+          asm]
+         [((? ups-any? u) (? special-message? i) (? empty? o))
+          (process-special-message asm 'wire inp)]
+         ))]
+    ;;proc
+    ;;stem
+))
 #;(define (step asm)
   (match asm
     ;;[ups rol mem ctl buf smb inp out] -> [ups rol mem ctl buf smb inp out]

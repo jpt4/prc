@@ -1,3 +1,16 @@
+UTC20160627 
+
+Wanted: 
+Untyped polymorphic predicates, e.g. (any? u), detects u is a field in
+a uc-asm record with a span [e/ss/sp e/ss/sp e/ss/sp].
+
+Possible solution: 
+Bind meta-data to u, detect in (any?).  
+
+Realization: 
+This is a use case for symbol property lists, and sounds like halfway
+to an ill-specified ad hoc implementation of actual types.
+
 UTC20160607
 A wire cell permutes the state of the data structure: [nbo inp
 out]. At the coarsest grain, each field can be occupied (1), or
