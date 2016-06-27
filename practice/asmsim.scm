@@ -12,6 +12,7 @@
 ;;;universal cell
 ;;constants
 (define standard-signal 1) (define max-buffer-length 5)
+(define empty '(_ _ _)) (define clear '())
 (define special-messages 
   (vector 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 
           'zero 'one))
@@ -20,47 +21,47 @@
 (define-immutable-record-type <uc-core>
   (mk-uc-core inp out smb rol mem ctl buf)
   uc-core?
-  (inp inp inp!) (out out out!) (smb smb smb!)
-  (rol rol rol!) (mem mem mem!) (ctl ctl ctl!) (buf buf buf!))
-(define (ai core) (list-ref (inp core) 0))
-(define (ai! core i) (inp! core (list-set! (inp core) 0 i)))
-(define (bi core) (list-ref (inp core) 1))
-(define (bi! core i) (inp! core (list-set! (inp core) 1 i)))
-(define (ci core) (list-ref (inp core) 2))
-(define (ci! core i) (inp! core (list-set! (inp core) 2 i)))
-(define (ao core) (list-ref (out core) 0))
-(define (ao! core i) (inp! core (list-set! (out core) 0 i)))
-(define (bo core) (list-ref (out core) 1))
-(define (bo! core i) (inp! core (list-set! (out core) 1 i)))
-(define (co core) (list-ref (out core) 2))
-(define (co! core i) (inp! core (list-set! (out core) 2 i)))
+  (inp inp^ inp!) (out out^ out!) (smb smb^ smb!)
+  (rol rol^ rol!) (mem mem^ mem!) (ctl ctl^ ctl!) (buf buf^ buf!))
+(define (ai^ core) (list-ref (inp^ core) 0))
+(define (ai! core i) (inp! core (list-set! (inp^ core) 0 i)))
+(define (bi^ core) (list-ref (inp^ core) 1))
+(define (bi! core i) (inp! core (list-set! (inp^ core) 1 i)))
+(define (ci^ core) (list-ref (inp^ core) 2))
+(define (ci! core i) (inp! core (list-set! (inp^ core) 2 i)))
+(define (ao^ core) (list-ref (out^ core) 0))
+(define (ao! core i) (inp! core (list-set! (out^ core) 0 i)))
+(define (bo^ core) (list-ref (out^ core) 1))
+(define (bo! core i) (inp! core (list-set! (out^ core) 1 i)))
+(define (co^ core) (list-ref (out^ core) 2))
+(define (co! core i) (inp! core (list-set! (out^ core) 2 i)))
 ;;uc node-in-matrix state
 (define-immutable-record-type <uc-node>
   (mk-uc-node nid nbra nbrb nbrc uc-core)
   uc-node?
-  (nid nid nid!) (nbra nbra nbra!) (nbrb nbrb nbrb!) (nbrc nbrc nbrc!)
-  (uc-core node-core node-core!))
+  (nid nid^ nid!) (nbra nbra^ nbra!) (nbrb nbrb^ nbrb!) (nbrc nbrc^ nbrc!)
+  (uc-core node-core^ node-core!))
 ;;uc abstract state machine state
 (define-immutable-record-type <uc-asm>
   (mk-uc-asm ups uc-core)
   uc-asm?
-  (ups ups ups!) (uc-core asm-core asm-core!))
-(define (nao asm) (list-ref (ups asm) 0))
-(define (nao! asm v) (ups! asm (list-set! (ups asm) 0 v)))
-(define (nbo asm) (list-ref (ups asm) 1))
-(define (nbo! asm v) (ups! asm (list-set! (ups asm) 1 v)))
-(define (nco asm) (list-ref (ups asm) 2))
-(define (nco! asm v) (ups! asm (list-set! (ups asm) 2 v)))
+  (ups ups^ ups!) (uc-core asm-core^ asm-core!))
+(define (nao^ asm) (list-ref (ups^ asm) 0))
+(define (nao! asm v) (ups! asm (list-set! (ups^ asm) 0 v)))
+(define (nbo^ asm) (list-ref (ups^ asm) 1))
+(define (nbo! asm v) (ups! asm (list-set! (ups^ asm) 1 v)))
+(define (nco^ asm) (list-ref (ups^ asm) 2))
+(define (nco! asm v) (ups! asm (list-set! (ups^ asm) 2 v)))
 
 ;;constructors
 (define (make-uc-asm node node-matrix)
-  (let* ([core (node-core node)]
-         [nao (ao (node-core (matrix-ref node-matrix (nbra node))))]
-         [nbo (bo (node-core (matrix-ref node-matrix (nbrb node))))]
-         [nco (co (node-core (matrix-ref node-matrix (nbrc node))))])
-    (mk-uc-asm 'q0 (list nao nbo nco) core)))
+  (let* ([core (node-core^ node)]
+         [nao (ao^ (node-core^ (matrix-ref node-matrix (nbra^ node))))]
+         [nbo (bo^ (node-core^ (matrix-ref node-matrix (nbrb^ node))))]
+         [nco (co^ (node-core^ (matrix-ref node-matrix (nbrc^ node))))])
+    (mk-uc-asm (list nao nbo nco) core)))
 
-;;state machine interupstation
+;;state machine interpretation
 (define (step asm)
   (match asm
     ;;wire     
@@ -72,22 +73,25 @@
          [((? empty? u) (? empty? i) (? non-empty? o))
           asm]
          [((? empty? u) (? standard-signal? i) (? empty? o))
-          (set-fields asm [(asm-core inp) (empty inp)] [(asm-core out) inp])]
+          (set-fields asm 
+                      [(asm-core^ inp^) empty] [(asm-core^ out^) i])]
          [((? empty? u) (? standard-signal? i) (? non-empty? o))
           asm]
          [((? non-empty? u) (? empty? i) (? empty? o))
-          (set-fields asm [(asm-core ups) (empty ups)] [(asm-core inp) ups])]
+          (set-fields asm [(ups^) empty] [(asm-core^ inp^) u])]
          [((? non-empty? u) (? empty? i) (? non-empty? o))
-          (set-fields asm [(asm-core ups) (empty ups)] [(asm-core inp) ups])]
+          (set-fields asm [(ups^) empty] [(asm-core^ inp^) u])]
          [((? non-empty? u) (? standard-signal? i) (? empty? o))
-          (set-fields asm [(asm-core inp) (empty inp)] [(asm-core out) inp])]
+          (set-fields asm [(asm-core^ inp^) empty] [(asm-core^ out^) i])]
          [((? non-empty? u) (? standard-signal? i) (? non-empty? o))
           asm]
-         [((? ups-any? u) (? special-message? i) (? empty? o))
-          (process-special-message asm 'wire inp)]
+         [((? (lambda (f) (any? 'io f)) u) (? special-message? i) (? empty? o))
+          (process-special-message asm)]
+         [_ 'halt] ;;for diagnostic purposes only
          ))]
     ;;proc
     ;;stem
+    [_ 'halt] ;;for diagnostic purposes only
 ))
 #;(define (step asm)
   (match asm
@@ -222,33 +226,60 @@
     [_ 'halt]
     ))
 
-(define (empty? v) (and-map (lambda (l) (eq? l '_)) v))
-(define (not-empty? v) (not (empty? v)))
-(define (not-full? buf) (< (length buf) max-buffer-length))
-(define (standard i) 
-  (and (not (eq? '(_ _ _) i))
-       (map (lambda (a) (or (eq? a 1) (eq? a 0) (eq? a '_))) i)))
-(define (special? i) 
+(define (any? typ fel) 
+  (case typ
+    [(io) 
+     (once? true? 
+            (list (empty? fel) (standard-signal? fel) (special-message? fel)))]
+    ))
+(define (clear? f) (eq? f clear))
+(define-values (once? count-filter? count-filter)
+  (values
+   (lambda (f ls) (count-filter? 1 f ls))
+   (lambda (n f ls) (eq? n (count-filter f ls)))
+   (lambda (f ls) (length (filter f ls)))))
+(define (empty? f) (eq? f empty))
+(define (false? val) (eq? val #f))
+(define (non-empty? i) (not (empty? i)))
+(define (non-full? buf) (< (length buf) max-buffer-length))
+(define (standard-signal? i) 
+  (and (non-empty? i)
+       (and-map (lambda (a) (or (eq? a 1) (eq? a 0) (eq? a '_))) i)))
+(define (stem-init? inp) 
+  (once? (lambda (a) (and (non-empty? a) (eq? a 'stem-init))) inp))
+(define (special-message? i) 
   (count-filter? 1 (lambda (a) (member a (vector->list special-messages))) i))
-(define (stem-init? i) (count-filter? 1 (lambda (a) (eq? a 'stem-init)) i))
+(define (true? val) (eq? val #t))
+(define (process-special-message asm)
+  (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))])
+    (case rol
+      [(wire) (unless (stem-init? inp)
+                      asm
+                      (set-fields asm
+                                  [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+                                  [(asm-core^ smb^) clear] [(asm-core^ rol^) 'stem]
+                                  [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
+                                  [(asm-core^ buf^) clear]))]
+      [(proc) (dispnl 'proc)]
+      [(stem) (dispnl 'stem)])))
 (define (switch m) (abs (- m 1)))
-(define clear '())
-(define (empty f) (map (lambda (a) '_) f))
-(define (count-filter f ls) (length (filter f ls)))
-(define (count-filter? n f ls) (eq? n (count-filter f ls)))
 (define (rotate l n) (list-rotate l n))
 (define (list-rotate ls num)
-	(let* ([snum (modulo num (length ls))] ;sanitized shift value
-				 [new-head (list-tail ls (- (length ls) snum))]
-				 [new-tail (list-head ls (- (length ls) snum))])
-		(append new-head new-tail)))
+  (let* ([snum (modulo num (length ls))] ;sanitized shift value
+         [new-head (list-tail ls (- (length ls) snum))]
+         [new-tail (list-head ls (- (length ls) snum))])
+    (append new-head new-tail)))
+
+;;auxiliary
+(define-syntax-rule (unless test one two)
+  (if test two one))
 
 ;;uc matrix
 (define (matrix-ref matrix index) (hash-ref matrix index))
 
 ;;;test suite
 (define uc-core-prototype
-  (mk-uc-core 'rol 'mem 'ctl 'buf 'smb 'inp 'out))
+  (mk-uc-core 'inp 'out 'smb 'rol 'mem 'ctl 'buf))
 (define uc-node-prototype
   (mk-uc-node 'nid 'nbra 'nbrb 'nbrc uc-core-prototype))
 (define uc-asm-prototype
@@ -264,83 +295,55 @@
    
 ;;test suite
 (define (tests) 
-  (begin
-    (dispnl* 
-     (list 
-      uc-core-prototype  uc-node-prototype uc-asm-prototype
-      (set-fields uc-core-prototype
-                  [(hig) '(0 0 1)]
-                  [(buf) '(1 1 1 1)])
-      (set-fields uc-node-prototype 
-                  [(nbrc?) 3]
-                  [(node-core rol) 'stem])
-      (set-fields uc-asm-prototype 
-                  [(asm-core mem) '1]
-                  [(sta) 'init])
-      "0 0 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 0 '() '() '() '(_ _ _) '(_ _ _)))])
-        (list asm (step asm)))
-      "0 0 1"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 0 '() '() '() '(_ _ _) '(1 0 1)))])
-        (list asm (step asm)))
-      "0 1sr 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 0 '() '() '() '(1 0 1) '(_ _ _)))])
-        (list asm (step asm)))
-      "0 1sl 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 1 '() '() '() '(1 0 1) '(_ _ _)))])
-        (list asm (step asm)))
-      "0 1ns 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 1 '() '() '() '(_ _ _) '(_ _ _)))])
-        (list asm (step asm)))
-      "0 1 1"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(_ _ _) (mk-uc-core 
-                                'wire 0 '() '() '() '(1 0 1) '(0 0 _)))])
-        (list asm (step asm)))
-      "1 0 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 0 '() '() '() '(_ _ _) '(_ _ _)))])
-        (list asm (step asm)))
-      "1 0 1"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 0 '() '() '() '(_ _ _) '(1 1 1)))])
-        (list asm (step asm)))
-      "1 1sr 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core
-                                'wire 0 '() '() '() '(_ 1 1) '(_ _ _)))])
-        (list asm (step asm)))
-      "1 1sl 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 1 '() '() '() '(_ 1 1) '(_ _ _)))])
-        (list asm (step asm)))
-      "1 1ns 0"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 1 '() '() '() '(_ _ _) '(_ _ _)))])
-        (list asm (step asm)))
-      "1 1 1"
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 0 '() '() '() '(1 1 1) '(0 0 0)))])
-        (list asm (step asm)))
-      (let ([asm (mk-uc-asm 
-                  'q0 '(1 _ 0) (mk-uc-core 
-                                'wire 0 '() '() '() '(1 stem-init 1) 
-                                '(0 1 0)))])
-        (list asm (step asm)))      
-      ))           
-    ))
+  (letrec* ([e empty] [c clear] [ne '(_ 0 1)] [ss '(1 0 _)] [si '(stem-init _ 0)]
+         [wire-test (mk-uc-asm e (mk-uc-core e e c 'wire 0 c c))])
+    (begin      
+      (dispnl* 
+       (list 
+        uc-core-prototype  uc-node-prototype uc-asm-prototype
+        (set-fields uc-core-prototype
+                    [(ctl^) '(0 0 1)]
+                    [(buf^) '(1 1 1 1)])
+        (set-fields uc-node-prototype 
+                    [(nbrc^) 3]
+                    [(node-core^ rol^) 'stem])
+        (set-fields uc-asm-prototype 
+                    [(asm-core^ mem^) '1])                  
+        "wire"
+        "standard signal"
+        "e e e"
+        (let ([asm wire-test])
+          (list asm (step asm)))
+        "e e ne"
+        (let ([asm (set-fields wire-test [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "e ss e"
+        (let ([asm (set-fields wire-test [(asm-core^ inp^) ss])])
+          (list asm (step asm)))
+        "e ss ne"
+        (let ([asm (set-fields wire-test 
+                               [(asm-core^ inp^) ss] [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "ne e e"
+        (let ([asm (set-fields wire-test [(ups^) ne])])
+          (list asm (step asm)))
+        "ne e ne"
+        (let ([asm (set-fields wire-test 
+                               [(ups^) ne] [(asm-core^ out^) '(_ 0 1)])])
+          (list asm (step asm)))
+        "ne ss e"
+        (let ([asm (set-fields wire-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss])])
+          (list asm (step asm)))
+        "ne ss ne"
+        (let ([asm (set-fields wire-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss] 
+                               [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "special message"
+        "a si e"
+        (let ([asm (set-fields wire-test 
+                               [(ups^) ne] [(asm-core^ inp^) si]
+                               [(asm-core^ out^) e])])
+          (list asm (step asm)))
+        )))))

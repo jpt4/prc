@@ -11,6 +11,15 @@ Realization:
 This is a use case for symbol property lists, and sounds like halfway
 to an ill-specified ad hoc implementation of actual types.
 
+uc-asm interpretation will include catch-all (match) clauses, yielding
+'halt, only while in development. The semantics of the asm are
+specifically restrictive, not permissive, of malformed states (which
+should not be possible).
+
+Observation:
+Whether by verbosity or punctuation overloading, names acquire brevet
+semantic hierarchies.
+
 UTC20160607
 A wire cell permutes the state of the data structure: [nbo inp
 out]. At the coarsest grain, each field can be occupied (1), or
@@ -63,7 +72,8 @@ with that of sole producer.
 UTC20160526
 
 Difference between compile-to-hardware vs. high-level hardware. First
-has all-bespoke primitives, the circuit equivalents of higher level
+has all-bespoke primitives, the circuit equivalents of higher lev
+el
 language expressions, the second primitives designed to interpret HLL
 expressions as native, analogous to native execution of machine
 code. Cross-over: compile to hardware an HLL interpreter.
