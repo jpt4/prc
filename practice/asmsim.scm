@@ -90,6 +90,33 @@
          [_ 'halt] ;;for diagnostic purposes only
          ))]
     ;;proc
+    [($ <uc-asm> ups ($ <uc-core> inp out smb 'proc mem ctl buf))
+     (let ([flex-fields (list ups inp out mem)])
+       (match flex-fields
+         [((? empty? u) (? empty? i) (? empty? o) m)
+          asm]
+         [((? empty? u) (? empty? i) (? non-empty? o) m)
+          asm]
+         [((? empty? u) (? standard-signal? i) (? empty? o) m)
+          (set-fields asm 
+                      [(asm-core^ inp^) empty] 
+                      [(asm-core^ out^) (rotate i (+ 1 m))] [(asm-core^ mem^) (switch m)])]
+         [((? empty? u) (? standard-signal? i) (? non-empty? o) m)
+          asm]
+         [((? non-empty? u) (? empty? i) (? empty? o) m)
+          (set-fields asm [(ups^) empty] [(asm-core^ inp^) u])]
+         [((? non-empty? u) (? empty? i) (? non-empty? o) m)
+          (set-fields asm [(ups^) empty] [(asm-core^ inp^) u])]
+         [((? non-empty? u) (? standard-signal? i) (? empty? o) m)
+          (set-fields asm 
+                      [(asm-core^ inp^) empty] 
+                      [(asm-core^ out^) (rotate i (+ 1 m))] [(asm-core^ mem^) (switch m)])]
+         [((? non-empty? u) (? standard-signal? i) (? non-empty? o) m)
+          asm]
+         [((? (lambda (f) (any? 'io f)) u) (? special-message? i) (? empty? o) m)
+          (process-special-message asm)]
+         [_ 'halt] ;;for diagnostic purposes only
+         ))]
     ;;stem
     [_ 'halt] ;;for diagnostic purposes only
 ))
@@ -254,15 +281,19 @@
   (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))])
     (case rol
       [(wire) (unless (stem-init? inp)
-                      asm
-                      (set-fields asm
-                                  [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
-                                  [(asm-core^ smb^) clear] [(asm-core^ rol^) 'stem]
-                                  [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
-                                  [(asm-core^ buf^) clear]))]
-      [(proc) (dispnl 'proc)]
+                      (set-fields asm [(asm-core^ inp^) empty])
+                      (set-stem-defaults asm))]
+      [(proc) (unless (stem-init? inp)
+                      (set-fields asm [(asm-core^ inp^) empty])
+                      (set-stem-defaults asm))]
       [(stem) (dispnl 'stem)])))
-(define (switch m) (abs (- m 1)))
+(define (set-stem-defaults asm)
+  (set-fields asm
+              [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+              [(asm-core^ smb^) clear] [(asm-core^ rol^) 'stem]
+              [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
+              [(asm-core^ buf^) clear]))
+  (define (switch m) (abs (- m 1)))
 (define (rotate l n) (list-rotate l n))
 (define (list-rotate ls num)
   (let* ([snum (modulo num (length ls))] ;sanitized shift value
@@ -296,7 +327,8 @@
 ;;test suite
 (define (tests) 
   (letrec* ([e empty] [c clear] [ne '(_ 0 1)] [ss '(1 0 _)] [si '(stem-init _ 0)]
-         [wire-test (mk-uc-asm e (mk-uc-core e e c 'wire 0 c c))])
+         [wire-test (mk-uc-asm e (mk-uc-core e e c 'wire 0 c c))]
+         [proc-test (mk-uc-asm e (mk-uc-core e e c 'proc 0 c c))])
     (begin      
       (dispnl* 
        (list 
@@ -309,7 +341,7 @@
                     [(node-core^ rol^) 'stem])
         (set-fields uc-asm-prototype 
                     [(asm-core^ mem^) '1])                  
-        "wire"
+        "wire [ups inp out]"
         "standard signal"
         "e e e"
         (let ([asm wire-test])
@@ -343,6 +375,75 @@
         "special message"
         "a si e"
         (let ([asm (set-fields wire-test 
+                               [(ups^) ne] [(asm-core^ inp^) si]
+                               [(asm-core^ out^) e])])
+          (list asm (step asm)))
+        "proc [ups inp out mem]"
+        "standard signal"
+        "e e e 0"
+        (let ([asm proc-test])
+          (list asm (step asm)))
+        "e e e 1"
+        (let ([asm (set-fields proc-test [(asm-core^ mem^) 1])])
+          (list asm (step asm)))        
+        "e e ne 0"
+        (let ([asm (set-fields proc-test [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "e e ne 1"
+        (let ([asm (set-fields proc-test [(asm-core^ out^) ne] [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "e ss e 0"
+        (let ([asm (set-fields proc-test [(asm-core^ inp^) ss])])
+          (list asm (step asm)))
+        "e ss e 1"
+        (let ([asm (set-fields proc-test [(asm-core^ inp^) ss] [(asm-core^ mem^) 1])])
+          (list asm (step asm)))        
+        "e ss ne 0"
+        (let ([asm (set-fields proc-test 
+                               [(asm-core^ inp^) ss] [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "e ss ne 1"
+        (let ([asm (set-fields proc-test 
+                               [(asm-core^ inp^) ss] [(asm-core^ out^) ne] 
+                               [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "ne e e 0"
+        (let ([asm (set-fields proc-test [(ups^) ne] )])
+          (list asm (step asm)))
+        "ne e e 1"
+        (let ([asm (set-fields proc-test [(ups^) ne] [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "ne e ne 0"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ out^) '(_ 0 1)])])
+          (list asm (step asm)))
+        "ne e ne 1"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ out^) '(_ 0 1)]
+                               [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "ne ss e 0"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss])])
+          (list asm (step asm)))
+        "ne ss e 1"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss]
+                               [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "ne ss ne 0"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss] 
+                               [(asm-core^ out^) ne])])
+          (list asm (step asm)))
+        "ne ss ne 1"
+        (let ([asm (set-fields proc-test 
+                               [(ups^) ne] [(asm-core^ inp^) ss] 
+                               [(asm-core^ out^) ne] [(asm-core^ mem^) 1])])
+          (list asm (step asm)))
+        "special message"
+        "a si e a"
+        (let ([asm (set-fields proc-test 
                                [(ups^) ne] [(asm-core^ inp^) si]
                                [(asm-core^ out^) e])])
           (list asm (step asm)))
