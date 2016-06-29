@@ -14,8 +14,7 @@
 (define standard-signal 1) (define max-buffer-length 5)
 (define empty '(_ _ _)) (define clear '())
 (define special-messages 
-  (vector 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 
-          'zero 'one))
+  (list 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 0 1))
 
 ;;universal cell core (aka cell) state
 (define-immutable-record-type <uc-core>
@@ -85,7 +84,8 @@
           (set-fields asm [(asm-core^ inp^) empty] [(asm-core^ out^) i])]
          [((? non-empty? u) (? standard-signal? i) (? non-empty? o))
           asm]
-         [((? (lambda (f) (any? 'io f)) u) (? special-message? i) (? empty? o))
+         [((? (lambda (f) (any? 'io f)) u) 
+           (? special-message? i) (? empty? o))
           (process-special-message asm)]
          [_ 'halt] ;;for diagnostic purposes only
          ))]
@@ -100,7 +100,8 @@
          [((? empty? u) (? standard-signal? i) (? empty? o) m)
           (set-fields asm 
                       [(asm-core^ inp^) empty] 
-                      [(asm-core^ out^) (rotate i (+ 1 m))] [(asm-core^ mem^) (switch m)])]
+                      [(asm-core^ out^) (rotate i (+ 1 m))] 
+                      [(asm-core^ mem^) (switch m)])]
          [((? empty? u) (? standard-signal? i) (? non-empty? o) m)
           asm]
          [((? non-empty? u) (? empty? i) (? empty? o) m)
@@ -110,154 +111,66 @@
          [((? non-empty? u) (? standard-signal? i) (? empty? o) m)
           (set-fields asm 
                       [(asm-core^ inp^) empty] 
-                      [(asm-core^ out^) (rotate i (+ 1 m))] [(asm-core^ mem^) (switch m)])]
+                      [(asm-core^ out^) (rotate i (+ 1 m))] 
+                      [(asm-core^ mem^) (switch m)])]
          [((? non-empty? u) (? standard-signal? i) (? non-empty? o) m)
           asm]
-         [((? (lambda (f) (any? 'io f)) u) (? special-message? i) (? empty? o) m)
+         [((? (lambda (f) (any? 'io f)) u) 
+           (? special-message? i) (? empty? o) m)
           (process-special-message asm)]
          [_ 'halt] ;;for diagnostic purposes only
          ))]
     ;;stem
+    [($ <uc-asm> ups ($ <uc-core> inp out smb 'proc mem ctl buf))
+     (let ([flex-fields (list ups inp out smb ctl buf)])
+       (match flex-fields
+         [((? empty? u i o) (? clear? s c b))
+          asm]
+         [((? non-empty? u) (? empty? i o) (? clear? s) ctl (? <full? b))
+          (set-fields asm
+                      [(asm-core^ ups^) clear] [(asm-core^ inp^) u])]
+         [(u (? single-standard-signal? i) (? empty? o) clear clear clear)
+          (set-fields asm 
+                      [(asm-core^ inp^) empty] 
+                      [(asm-core^ ctl^) (set-ctl inp)])]
+         [(u (? (lambda (a) 
+                  (and (single-standard-signal? a)
+                       (or (eq? (list-ref a (list-ref flex-fields 4)) 0)
+                           (eq? (list-ref a (list-ref flex-fields 4)) 1)))) i)
+             empty clear (? non-clear? c) (? <full? b))
+          (set-fields asm
+                      [(asm-core^ inp^) clear] 
+                      [(asm-core^ buf^) (write-buf i b)])]
+         [(u empty empty clear (? non-clear? c) (? full? b))
+          (process-buffer asm)]
+         [(u empty (? (lambda (a) (eq? (list-ref flex-fields 5) a)) o) 'one
+             clear (? amp-pat? b))
+          asm]
+         [(u empty (? non-empty? o) 'one clear (? amp-pat? b))
+          asm]
+         [(u empty empty 'one clear (? amp-pat? b))
+          (set-fields asm
+                      [(asm-core^ out^) b] [(asm-core^ smb^) 'two])]
+         [(u empty (? non-empty? o) 'two clear (? amp-pat? b))
+          asm]
+         [(u empty empty 'two clear (? amp-pat? b))
+          (set-fields asm
+                      [(asm-core^ out^) b] [(asm-core^ smb^) 'three])]
+         [_ 'halt] ;;for diagnostic purposes only
+         ))]         
     [_ 'halt] ;;for diagnostic purposes only
 ))
-#;(define (step asm)
-  (match asm
-    ;;[ups rol mem ctl buf smb inp out] -> [ups rol mem ctl buf smb inp out]
-    ;no-op
-    ;e rol mem ctl not-full e e out -> e rol mem ctl not-full e e out
-    [($ <uc-asm> 'q0 (? empty? ups) 
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? ctl) (? empty? buf) 
-           (? empty? smb) (? empty? inp) out))
-     asm]
-    ;;proc/wire standard signal
-    ;;wire
-    ;0 1ss 0 -> 0 0 1ss
-    [($ <uc-asm> 'q0 (? empty? ups) 
-        ($ <uc-core> 'wire mem (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? standard inp) (? empty? out)))
-     (set-fields asm 
-                 [(asm-core inp) (empty inp)]
-                 [(asm-core out) (rotate inp (+ 1 mem))])]
-    ;;proc
-    ;0 1ss 0 -> 0 0 1ss
-    [($ <uc-asm> 'q0 (? empty? ups) 
-        ($ <uc-core> 'proc mem (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? standard inp) (? empty? out)))
-     (set-fields asm 
-                 [(asm-core inp) (empty inp)]
-                 [(asm-core mem) (switch mem)]
-                 [(asm-core out) (rotate inp (+ 1 mem))])]
-    ;0 1ss 1ne -> 0 1ss 1ne
-    [($ <uc-asm> 'q0 (? empty? ups) 
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? ctl) (? empty? buf) 
-           (? empty? smb)
-           (? standard inp) (? not-empty? out)))
-     asm]
-    ;1ne 0 0 -> 0 1ne 0
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? ctl) (? empty? buf) 
-           (? empty? smb)
-           (? empty? inp) (? empty? out)))
-     (set-fields asm 
-                 [(ups) (empty ups)]
-                 [(asm-core inp) ups])]
-    ;1ne 0 1ne -> 0 1ne 1ne 
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? ctl) (? empty? buf) 
-           (? empty? smb)
-           (? empty? inp) (? not-empty? out)))
-     (set-fields asm 
-                 [(ups) (empty ups)]
-                 [(asm-core inp) ups])]
-    ;;wire - compound transition
-    ;1ne 1ss 0 -> 0 1ne 1ss
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> 'wire mem (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? standard inp) (? empty? out)))
-     (set-fields asm 
-                 [(asm-core inp) (empty inp)]
-                 [(asm-core out) (rotate inp (+ 1 mem))])]
-    ;;proc - compound transition
-    ;1ne 1ss 0 -> 0 1ne 1ss
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> 'wire mem (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? standard inp) (? empty? out)))
-     (set-fields asm 
-                 [(asm-core inp) (empty inp)]
-                 [(asm-core mem) (switch mem)]
-                 [(asm-core out) (rotate inp (+ 1 mem))])]
-    ;1ne 1ss 1ne -> 1ne 1ss 1ne
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> 'wire mem (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? standard inp) (? not-empty? out)))
-     asm]
-    ;;proc/wire stem-init signal
-    ;ups p/w mem stem? out -> ups 'stem 0 e e
-    [($ <uc-asm> 'q0 ups 
-        ($ <uc-core> (or 'proc 'wire) mem (? empty? ctl) (? empty? buf) 
-           (? empty? smb)
-           (? stem-init? inp) out))
-     (set-fields asm
-                 [(asm-core rol) 'stem] [(asm-core mem) 0] 
-                 [(asm-core inp) (empty inp)] [(asm-core out) (empty out)]
-                 )]
-    ;;stem [ups ctl buf smb inp out]
-    ;collect input
-    ;ne ctl nf e e out -> e ctl nf e ups out
-    [($ <uc-asm> 'q0 (? not-empty? ups) 
-        ($ <uc-core> 'stem 0 ctl (? not-full? buf) (? empty? smb)
-           (? empty? inp) out))
-     (set-fields asm
-                 [(ups) (empty ups)] [(asm-core inp) ups])]
-    ;establish control rail 
-    ;ups e e e sss out -> ups inp e e e out
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 (? empty? ctl) (? empty? buf) (? empty? smb)
-           (? single-standard-signal? inp) out))
-     (set-fields asm
-                 [(inp) (empty inp)] [(asm-core inp) ups])]   
-    ;non-final buffer update
-    ;ups ne <(full - 1) e sss out -> e ne <=(full - 1) ups out
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 (? not-empty? ctl) (? not-full? buf) 
-           (? emtpy? smb) (? single-standard-signal? inp) out))
-     (set-fields asm
-                 [(ups) (empty ups)] [(asm-core buf) (update-buf ctl inp)]
-                 [(asm-core inp) ups])]
-    ;final buffer update
-    ;ups ne (full - 1) e sss out -> ups ne full e e out
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 (? not-empty? ctl) (? full-less-one? buf) 
-           (? emtpy? smb) (? single-standard-signal? inp) out))
-     (set-fields asm
-                 [(asm-core buf) (update-buf ctl inp)]
-                 [(asm-core inp) (empty inp)])]
-    ;process full buffer
-    ;ups ne full e e e -> ups e e (p buf) e (p buf)
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 (? not-empty? ctl) (? full? buf) (? emtpy? smb)
-           (? empty? inp) (? empty? out)))
-     (process-buf asm buf)]
-    ;respond to self-mail
-    ;ups stem 0 e e ne e e -> ups (p smb) (p smb) e e (p smb) e (p smb)
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 (? empty? ctl) (? empty? buf) (? not-emtpy? smb)
-           (? empty? inp) (? empty? out)))
-     (process-smb asm smb)]
-    ;process special message
-    ;ups stem 0 ctl buf e sp e -> ups (p inp) (p inp) e e e e (p smb)
-    [($ <uc-asm> 'q0 ups
-        ($ <uc-core> 'stem 0 ctl buf (? empty? smb)
-           (? special? inp) (? empty? out)))
-     (process-special-message asm inp)]
-    [_ 'halt]
-    ))
 
+(define-values (<full? full)
+  (values
+   (lambda (b) (< (length b) max-buffer-length))
+   (lambda (b) (eq? (length b) max-buffer-length))))
 (define (any? typ fel) 
   (case typ
     [(io) 
-     (once? true? 
-            (list (empty? fel) (standard-signal? fel) (special-message? fel)))]
+     (once? 
+      true? 
+      (list (empty? fel) (standard-signal? fel) (special-message? fel)))]
     ))
 (define (clear? f) (eq? f clear))
 (define-values (once? count-filter? count-filter)
@@ -267,6 +180,7 @@
    (lambda (f ls) (length (filter f ls)))))
 (define (empty? f) (eq? f empty))
 (define (false? val) (eq? val #f))
+(define (non-clear? c) (not (clear? c)))
 (define (non-empty? i) (not (empty? i)))
 (define (non-full? buf) (< (length buf) max-buffer-length))
 (define (standard-signal? i) 
@@ -275,8 +189,38 @@
 (define (stem-init? inp) 
   (once? (lambda (a) (and (non-empty? a) (eq? a 'stem-init))) inp))
 (define (special-message? i) 
-  (count-filter? 1 (lambda (a) (member a (vector->list special-messages))) i))
+  (count-filter? 1 (lambda (a) (member a special-messages)) i))
 (define (true? val) (eq? val #t))
+(define (write-buf inp buf) 
+  (let ([i (or (list-index inp 0) (list-index inp 1))])
+    (append buf (list i))))
+(define-values (process-buffer bin-dec)
+  (values
+   (lambda (asm)
+     (letrec ([buf (buf^ (asm-core^ asm))] 
+              [tar (bin->dec (list-head buf 2))] 
+              [cmd (list-ref special-messages (list-tail buf 2))]
+              [tmp '(_ _ _)])
+       (cond
+        [(eq? cmd '(1 1 1))
+         (let ([pat (append tar (list 1))])
+           (set-fields asm
+                       [(asm-core^ inp^) pat] [(asm-core^ smb^) 1] 
+                       [(asm-core^ ctl^) clear] [(asm-core^ buf^) pat]))]
+        [(zero? tar)
+         (set-fields asm
+                     [(asm-core^ smb^) cmd] [(asm-core^ ctl^) clear]
+                     [(asm-core^ buf^) clear])]
+        [(> tar 0)
+         (set-fields asm
+                     [(asm-core^ out^) (list-set! tmp tar cmd)] 
+                     [(asm-core^ ctl^) clear] [(asm-core^ buf^) clear])])))
+   (lambda (bls)
+     (let aux ([b bls] [e (- (length bls) 1)] [acc 0])
+       (cond
+        [(null? b) acc]
+        [else (aux (cdr b) (- e 1) (+ acc (* (car b) (expt 2 e))))])))))
+   
 (define (process-special-message asm)
   (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))])
     (case rol
@@ -287,6 +231,7 @@
                       (set-fields asm [(asm-core^ inp^) empty])
                       (set-stem-defaults asm))]
       [(stem) (dispnl 'stem)])))
+(define (set-ctl inp) (or (list-index inp 0) (list-index inp 1)))
 (define (set-stem-defaults asm)
   (set-fields asm
               [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 

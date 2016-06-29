@@ -92,11 +92,16 @@ fixed:
 flex:
   [ups inp out smb ctl buf]
 
+nc    := non-clear, =/= '()
 sss   := single standard signal
+=ctl  := sss with control signal in the correct channel
 <full := buffer less than full
 full  := buffer full
+one   := first amplification tranche
+two   := second amplification tranche
+three := third amplification tranche
 pat   := pattern to amplify
-self  := token indicating under self control
+pbp   := pattern-by-pieces, pattern distributed piecewise per channel
 
 standard signal
 nop
@@ -106,17 +111,23 @@ acquire input
 set control rail
 [a sss e c c c]      ->  [a (clear inp) e c (set-ctl inp) c]
 write to buffer
-[a sss e c ne <full] ->  [a (clear inp) e c ne (write-buf inp buf)]
+[a =ctl e c nc <full] ->  [a (clear inp) e c nc (write-buf inp buf)]
 process full buffer
-[a e e c ne full]    ->  [a e (process-buf buf) (process-buf buf) 
-                          (clear ctl) (process-buf buf)]
+[a e e c nc full]    ->  [a (process-buf buf) (process-buf buf) 
+                          (process-buf buf) (clear ctl) (process-buf buf)]
 logical amplifier - first tranche
-[a e ne c self pat] ->  [a e ne c self pat]
+begin
+[a e pbp one c pat] ->  [a e ne c one pat]
+[a e ne one c pat]  ->  [a e ne c one pat]
 logical amplifier - second tranche
-[a e e c self pat]  ->  [a e buf:pat c self (clear buf)]
-[a e ne c self c]   ->  [a e ne c self c]
-logical amplifier - finished
-[a e e c self c]    ->  [a e e c (clear ctl) c]
+refill
+[a e e one c pat]   ->  [a e buf:pat two c pat]
+[a e ne two c pat]    ->  [a e ne two c pat]
+logical amplifier - third tranche
+refill
+[a e e two c pat]   ->  [a e buf:pat three c pat]
+end
+[a e e three c pat] ->  [a e e (clear smb) c (clear c)]
 
 special message
 [a sp e c c c]  ->  (process-special rol inp)
