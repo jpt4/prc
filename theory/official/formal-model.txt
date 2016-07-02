@@ -131,7 +131,7 @@ end
 
 special message
 [a sp e c c c]  ->  (process-special rol inp)
-[a e e sp c c]  ->  (process-smb inp)
+[a e e sp c c]  ->  (process-smb smb)
 
 UTC20151024
 

@@ -2,7 +2,7 @@
 ;;jpt4
 ;;An abstract state machine simulation model for Universal Cell matrices.
 ;;UTC20160502
-;;Guike Scheme v.2.0+
+;;Guile Scheme v.2.0+
 
 ;;srfi-9 with immutable extension (define-immutable-record-type)
 (use-modules (srfi srfi-9 gnu))
@@ -11,9 +11,9 @@
 
 ;;;universal cell
 ;;constants
-(define standard-signal 1) (define max-buffer-length 5)
+(define standard-signals (list 0 1)) (define max-buffer-length 5) 
 (define empty '(_ _ _)) (define clear '())
-(define special-messages 
+(define special-messages
   (list 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 0 1))
 
 ;;universal cell core (aka cell) state
@@ -128,7 +128,7 @@
           asm]
          [((? non-empty? u) (? empty? i o) (? clear? s) ctl (? <full? b))
           (set-fields asm
-                      [(asm-core^ ups^) clear] [(asm-core^ inp^) u])]
+                      [(ups^) clear] [(asm-core^ inp^) u])]
          [(u (? single-standard-signal? i) (? empty? o) clear clear clear)
           (set-fields asm 
                       [(asm-core^ inp^) empty] 
@@ -156,6 +156,13 @@
          [(u empty empty 'two clear (? amp-pat? b))
           (set-fields asm
                       [(asm-core^ out^) b] [(asm-core^ smb^) 'three])]
+         [(u empty empty 'three clear (? amp-pat b))
+          (set-fields asm
+                      [(asm-core^ smb^) clear] [(asm-core^ buf^) clear])]
+         [(u (? special-message? i) empty clear clear clear)
+          (process-special-message asm)]
+         [(u empty empty (? special-message? s) clear clear)
+          (process-self-mailbox asm)]
          [_ 'halt] ;;for diagnostic purposes only
          ))]         
     [_ 'halt] ;;for diagnostic purposes only
@@ -192,7 +199,7 @@
   (count-filter? 1 (lambda (a) (member a special-messages)) i))
 (define (true? val) (eq? val #t))
 (define (write-buf inp buf) 
-  (let ([i (or (list-index inp 0) (list-index inp 1))])
+  (let ([i (car (filter (lambda (a) (member a (list 0 1))) inp))]
     (append buf (list i))))
 (define-values (process-buffer bin-dec)
   (values
@@ -222,7 +229,8 @@
         [else (aux (cdr b) (- e 1) (+ acc (* (car b) (expt 2 e))))])))))
    
 (define (process-special-message asm)
-  (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))])
+  (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))]
+         [sms (car (filter (lambda (a) (member a special-messages)) inp))])
     (case rol
       [(wire) (unless (stem-init? inp)
                       (set-fields asm [(asm-core^ inp^) empty])
@@ -230,7 +238,20 @@
       [(proc) (unless (stem-init? inp)
                       (set-fields asm [(asm-core^ inp^) empty])
                       (set-stem-defaults asm))]
-      [(stem) (dispnl 'stem)])))
+      [(stem) (case sms
+                [(stem-init) (set-stem-defaults asm)]
+                [(wire-r-init) (set-wire-r-defaults asm)]
+                [(wire-l-init) (set-wire-l-defaults asm)]
+                [(proc-r-init) (set-proc-r-defaults asm)]
+                [(proc-l-init) (set-proc-l-defaults asm)]
+                )])))
+(define (process-self-mailbox asm)
+  (let* ([sms (car (smb^ (asm-core^ asm)))] [buf (buf^ (asm-core^ asm))])
+    (if (member sms (list 0 1))
+        (set-fields asm
+                    [(asm-core^ smb^) clear] 
+                    [(asm-core^ buf^) (append buf (list sms))])
+        (process-special-message asm))))
 (define (set-ctl inp) (or (list-index inp 0) (list-index inp 1)))
 (define (set-stem-defaults asm)
   (set-fields asm
@@ -238,7 +259,31 @@
               [(asm-core^ smb^) clear] [(asm-core^ rol^) 'stem]
               [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
               [(asm-core^ buf^) clear]))
-  (define (switch m) (abs (- m 1)))
+(define (set-wire-r-defaults asm)
+  (set-fields asm
+              [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+              [(asm-core^ smb^) clear] [(asm-core^ rol^) 'wire]
+              [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
+              [(asm-core^ buf^) clear]))
+(define (set-wire-l-defaults asm)
+  (set-fields asm
+              [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+              [(asm-core^ smb^) clear] [(asm-core^ rol^) 'wire]
+              [(asm-core^ mem^) 1] [(asm-core^ ctl^) clear]
+              [(asm-core^ buf^) clear]))
+(define (set-proc-r-defaults asm)
+  (set-fields asm
+              [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+              [(asm-core^ smb^) clear] [(asm-core^ rol^) 'proc]
+              [(asm-core^ mem^) 0] [(asm-core^ ctl^) clear]
+              [(asm-core^ buf^) clear]))
+(define (set-proc-l-defaults asm)
+  (set-fields asm
+              [(asm-core^ inp^) empty] [(asm-core^ out^) empty] 
+              [(asm-core^ smb^) clear] [(asm-core^ rol^) 'proc]
+              [(asm-core^ mem^) 1] [(asm-core^ ctl^) clear]
+              [(asm-core^ buf^) clear]))
+(define (switch m) (abs (- m 1)))
 (define (rotate l n) (list-rotate l n))
 (define (list-rotate ls num)
   (let* ([snum (modulo num (length ls))] ;sanitized shift value
