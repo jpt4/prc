@@ -15,8 +15,9 @@
 (define empty '(_ _ _)) (define clear '())
 (define special-messages
   (list 'stem-init 'wire-r-init 'wire-l-init 'proc-r-init 'proc-l-init 0 1))
+(define amplification-patterns (list '(0 0 1) '(0 1 1) '(1 0 1) '(1 1 1)))
 
-;;universal cell core (aka cell) state
+;;universal cell core state
 (define-immutable-record-type <uc-core>
   (mk-uc-core inp out smb rol mem ctl buf)
   uc-core?
@@ -34,17 +35,19 @@
 (define (bo! core i) (cinp! core (list-set! (cout^ core) 1 i)))
 (define (co^ core) (list-ref (cout^ core) 2))
 (define (co! core i) (cinp! core (list-set! (cout^ core) 2 i)))
-;;uc node-in-matrix state
+;;universal cell node-in-matrix state
 (define-immutable-record-type <uc-node>
-  (mk-uc-node nid nbra nbrb nbrc inp out smb rol mem)
+  (mk-uc-node nid nbra nbrb nbrc inp out smb rol mem ctl buf)
   uc-node?
   (nid nid^ nid!) (nbra nbra^ nbra!) (nbrb nbrb^ nbrb!) (nbrc nbrc^ nbrc!)
-  (uc-core node-core^ node-core!))
-;;uc abstract state machine state
+  (inp ninp^ ninp!) (out nout^ nout!) (smb nsmb^ nmsb!) (rol nrol^ nrol!)
+  (mem nmem^ nmem!) (ctl nctl^ nctl!) (buf nbuf^ nbuf!))
+;;universal cell abstract state machine state
+;;XX revert to node-core
 (define-immutable-record-type <uc-asm>
   (mk-uc-asm ups inp out smb rol mem ctl buf)
   uc-asm?
-  (ups aups^ aups!) (out aout^ aout!) (smb asmb^ asmb!)
+  (ups aups^ aups!) (inp ainp^ ainp!) (out aout^ aout!) (smb asmb^ asmb!)
   (rol arol^ arol!) (mem amem^ amem!) (ctl actl^ actl!) (buf abuf^ abuf!))
 (define (nao^ asm) (list-ref (aups^ asm) 0))
 (define (nao! asm v) (aups! asm (list-set! (aups^ asm) 0 v)))
@@ -125,7 +128,7 @@
           asm]
          [((? non-empty? u) empty empty clear c (? <full? b))
           (set-fields asm
-                      [(aups^) clear] [(ainp^) u])]
+                      [(aups^) empty] [(ainp^) u])]
          [(u (? single-standard-signal? i) empty clear clear clear)
           (set-fields asm 
                       [(ainp^) empty] [(actl^) (set-ctl inp)])]
@@ -135,24 +138,24 @@
                 i)
              empty clear (? non-clear? c) (? <full? b))
           (set-fields asm
-                      [(ainp^) clear] [(abuf^) (write-buf i b)])]
+                      [(ainp^) empty] [(abuf^) (write-buf i b)])]
          [(u empty empty clear (? non-clear? c) (? full? b))
           (process-buffer asm)]
          [(u empty (? (lambda (a) (eq? buf a)) o) clear 'one (? amp-pat? b))
           asm]
-         [(u empty (? non-empty? o) clear 'one (? amp-pat? b))
+         [(u empty (? standard-signal? o) clear 'one (? amp-pat? b))
           asm]
          [(u empty empty clear 'one (? amp-pat? b))
           (set-fields asm
-                      [(aout^) (list (cadr buf) (cadr buf) (cadr buf))] 
-                      [(actl^) 'two])]
-         [(u empty (? non-empty? o) clear 'two (? amp-pat? b))
+                      [(aout^) (set-pat 2 b)] [(actl^) 'two])]
+         [(u empty (? standard-signal? o) clear 'two (? amp-pat? b))
           asm]
          [(u empty empty clear 'two (? amp-pat? b))
           (set-fields asm
-                      [(aout^) (list (caddr buf) (caddr buf) (caddr buf))] 
-                      [(actl^) 'three])]
-         [(u empty empty clear 'three (? amp-pat b))
+                      [(aout^) (set-pat 3 b)] [(actl^) 'three])]
+         [(u empty (? standard-signal? o) clear 'three (? amp-pat? b))
+          asm]
+         [(u empty empty clear 'three (? amp-pat? b))
           (set-fields asm
                       [(actl^) clear] [(abuf^) clear])]
          [(u (? special-message? i) empty clear clear clear)
@@ -168,6 +171,8 @@
   (values
    (lambda (b) (< (length b) max-buffer-length))
    (lambda (b) (eq? (length b) max-buffer-length))))
+(define (amp-pat? b)
+  (member b amplification-patterns))
 (define (clear? f) (eq? f clear))
 (define-values (once? count-filter? count-filter)
   (values
@@ -188,12 +193,12 @@
   (count-filter? 1 (lambda (a) (member a special-messages)) i))
 (define (true? val) (eq? val #t))
 (define (write-buf inp buf) 
-  (let ([i (car (filter (lambda (a) (member a (list 0 1))) inp))]
+  (let ([i (car (filter (lambda (a) (member a (list 0 1))) inp))])
     (append buf (list i))))
 (define-values (process-buffer bin-dec)
   (values
    (lambda (asm)
-     (letrec ([buf (buf^ (asm-core^ asm))] 
+     (letrec ([buf (abuf^ asm)] 
               [tar (bin->dec (list-head buf 2))] 
               [cmd (list-ref special-messages (list-tail buf 2))]
               [tmp '(_ _ _)])
@@ -218,7 +223,7 @@
         [else (aux (cdr b) (- e 1) (+ acc (* (car b) (expt 2 e))))])))))
    
 (define (process-special-message asm)
-  (let* ([rol (rol^ (asm-core^ asm))] [inp (inp^ (asm-core^ asm))]
+  (let* ([rol (arol^ asm)] [inp (ainp^ asm)]
          [sms (car (filter (lambda (a) (member a special-messages)) inp))])
     (case rol
       [(wire) (unless (stem-init? inp)
@@ -235,12 +240,13 @@
                 [(proc-l-init) (set-proc-l-defaults asm)]
                 )])))
 (define (process-self-mailbox asm)
-  (let* ([sms (car (smb^ (asm-core^ asm)))] [buf (buf^ (asm-core^ asm))])
+  (let* ([sms (car (asmb^ asm))] [buf (abuf^ asm)])
     (if (member sms (list 0 1))
         (set-fields asm
                     [(asmb^) clear] 
                     [(abuf^) (append buf (list sms))])
         (process-special-message asm))))
+;list->num
 (define (set-ctl inp) (or (list-index inp 0) (list-index inp 1)))
 (define (set-stem-defaults asm)
   (set-fields asm
@@ -291,9 +297,9 @@
 (define uc-core-prototype
   (mk-uc-core 'inp 'out 'smb 'rol 'mem 'ctl 'buf))
 (define uc-node-prototype
-  (mk-uc-node 'nid 'nbra 'nbrb 'nbrc uc-core-prototype))
+  (mk-uc-node 'nid 'nbra 'nbrb 'nbrc 'inp 'out 'smb 'rol 'mem 'ctl 'buf))
 (define uc-asm-prototype
-  (mk-uc-asm (list 'nao 'nbo 'nco) uc-core-prototype))
+  (mk-uc-asm (list 'nao 'nbo 'nco) 'inp 'out 'smb 'rol 'mem 'ctl 'buf))
 
 (define (dispnl t) (begin (display t) (newline)))
 (define (dispnl* tls) 
@@ -305,19 +311,20 @@
    
 ;;test suite
 (define (tests) 
-  (letrec* ([e empty] [c clear] [ne '(_ 0 1)] [ss '(1 0 _)] [si '(stem-init _ 0)]
-         [wire-test (mk-uc-asm e (mk-uc-core e e c 'wire 0 c c))]
-         [proc-test (mk-uc-asm e (mk-uc-core e e c 'proc 0 c c))])
+  (letrec* ([e empty] [c clear] [ne '(_ 0 1)] [ss '(1 0 _)] 
+            [si '(stem-init _ 0)]
+         [wire-test (mk-uc-asm e e e c 'wire 0 c c)]
+         [proc-test (mk-uc-asm e e e c 'proc 0 c c)])
     (begin      
       (dispnl* 
        (list 
         uc-core-prototype  uc-node-prototype uc-asm-prototype
         (set-fields uc-core-prototype
-                    [(ctl^) '(0 0 1)]
-                    [(buf^) '(1 1 1 1)])
+                    [(cctl^) '(0 0 1)]
+                    [(cbuf^) '(1 1 1 1)])
         (set-fields uc-node-prototype 
                     [(nbrc^) 3]
-                    [(node-core^ rol^) 'stem])
+                    [(nrol^) 'stem])
         (set-fields uc-asm-prototype 
                     [(amem^) '1])                  
         "wire [ups inp out]"
