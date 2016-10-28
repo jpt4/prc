@@ -2,6 +2,87 @@ A mathematical formalization of the Universal Cell
 
 jpt4
 
+UTC20161026
+
+stem
+fixed:
+  rol stem
+  mem 0
+flex:
+  [ups inp out smb ctl buf]
+
+nc    := non-clear, =/= '()
+sss   := single standard signal
+=ctl  := sss with control signal in the correct channel
+<full := buffer less than full
+full  := buffer full
+one   := first amplification tranche
+two   := second amplification tranche
+three := third amplification tranche
+pat   := pattern to amplify
+1pat  := all first pattern symbol
+2pat  := all second pattern symbol
+3pat  := all third pattern symbol
+
+standard signal
+nop
+[e e e c c c]         ->  [e e e c c c]
+acquire input
+[ne e e c a <full]    ->  [(clear ups) ups:ne e c a <full]
+  process input
+ set control rail
+[a sss e c c c]       ->  [a (clear inp) e c (set-ctl inp) c]
+ write to buffer
+[a =ctl e c nc <full] ->  [a (clear inp) e c nc (write-buf inp buf)]
+ reject special message
+[a sp e c a a]        ->  [a (clear inp) e c a a]
+process full buffer
+[a e e c nc full]     ->  [a (process-buf buf) (process-buf buf) 
+                          (process-buf buf) (clear ctl) (process-buf buf)]
+  offer initial output
+ a/b/c target - nop
+[a e ne c nc full]    ->  [a e ne c nc full]
+ self-target - nop
+[a e e nc nc full]    ->  [a e e nc nc full]
+   flush buffer as FIFO
+  self-target
+ initial output
+[a e e nc nc nc]      ->  [a e (flush-output ctl buf) nc nc (cdr buf)]
+ offer flush output - nop
+[a e ne nc nc a]      ->  [a e ne ne ne a]
+ buffer flushed
+[a e e nc nc c]       ->  [a e e nc (clear ctl) c]
+  a/b/c target
+ initial output - nop
+[a e ne c nc full]    ->  [a e ne c nc full]
+ initial flush output
+[a e e c nc full]     ->  [a e (flush-output ctl buf) c nc (cdr buf)]
+ offer flush output - nop
+[a e ne c nc a]       ->  [a e ne c nc nc]
+ buffer flushed
+[a e e c nc c]        ->  [a e e c (clear ctl) c]
+
+special message
+[a sp e c c c]  ->  (process-special rol inp)
+[a e e sp c c]  ->  (process-smb smb)
+
+
+UTC20161008 - UTC20161021
+
+The stem buffer contains hidden state that is not naively
+reversible. The buffer records a sequence of five control standard
+signals, then performs stem operation calculated from the buffer
+contents. A token based stem ops alphabet could be used, such that
+each operation consumes and emits only one special message
+corresponding to the desired stem behavior, requiring no
+interpretation of buffer state, but this would increase the number of
+context-specific signals in the circuit, and pollute "long-distance"
+circuits with effectively no-op signals. Currently, standard signals
+never induce an empty operation - wire, proc, and stem cells all
+perform a productive, if not desired, behavior upon consuming a
+standard signal - unless sent to the self-mailbox of a stem cell.
+
+
 UTC20160622 - UTC20160625 
 Note: Experimenting with stack-appended updates
 
@@ -117,6 +198,7 @@ write to buffer
 process full buffer
 [a e e c nc full]    ->  [a (process-buf buf) (process-buf buf) 
                           (process-buf buf) (clear ctl) (process-buf buf)]
+
 logical amplifier - first tranche
 begin
 [a e 1pat c one pat] ->  [a e 1pat c one pat]
