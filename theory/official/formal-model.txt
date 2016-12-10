@@ -2,6 +2,78 @@ A mathematical formalization of the Universal Cell
 
 jpt4
 
+UTC20161208-10
+
+sta typ ups inp out mem aut con buf
+s   t   u   i   o   m   a   c   b
+
+activation:
+qa0 t=* u=* i=* o=* m=* a=* c=* b=*
+  --{t = wire}--{ }-->  wire: qw0 u=* i=* o=* m=*
+  --{t = proc}--{ }-->  proc: qp0 u=* i=* o=* m=*
+  --{t = stem}--{ }-->  stem: qs0 u=* i=* o=* m=* a=* c=* b=*
+
+qhuo:
+qhuo --{ }--{u -> *, o -> *}-->  qa0
+
+qhu:
+qhu  --{ }--{u -> *}-->  qa0
+
+wire:
+qw0 u=* i=* o=* m=*
+  --{o = !e}--{ }-->  [qhuo]
+ --{o = e}--{ }-->
+ qw1 * * e *  
+   --{u = e}--{ }-->  [qhu]
+  --{u = !e}--{u -> e, i -> u}-->
+  qw2 e u e *  
+    --{i = Esi}--{t -> stem, i -> e, m -> r, a -> e, c -> e, b -> e}-->
+    qw3 stem e e e r e e e  
+      --{ }--{ }-->  [qhu]
+   --{i = ss}--{ }-->  
+   qw4 e ss e * 
+     --{m = r}--{i -> e, o -> ir}-->  
+     qw5 e e ir r  
+       --{ }--{ }-->  [qhuo]
+    --{m = l}--{i -> e, o -> il}-->
+    qw6 e e il l  
+      --{ }--{ }-->  [qhuo]
+
+proc:
+qp0 u=* i=* o=* m=*
+  --{o = !e}--{ }-->  [qhuo]
+ --{o = e}--{ }-->
+ qp1 * * e *  
+   --{u = e}--{ }-->  [qhu]
+  --{u = !e}--{u -> e, i -> u}-->
+  qp2 e u e *
+    --{i = Esi}--{t -> stem, i -> e, m -> r, a -> e, c -> e, b -> e}-->
+    qp3 stem e e e r e e e  
+      --{ }--{ }-->  [qhu]
+   --{i = ss}--{ }-->  
+   qp4 e ss e * 
+     --{m = r}--{i -> e, o -> ir, m -> l}-->  
+     qp5 e e ir l  
+       --{ }--{ }-->  [qhuo]
+    --{m = l}--{i -> e, o -> il, m -> r}-->
+    qp6 e e il r  
+      --{ }--{ }-->  [qhuo]
+
+stem:
+qs0 u=* i=* o=* m=* s=* c=* b=*
+  --{o = !e}--{ }-->  [qhuo]
+ --{o = e}--{ }-->  
+ qs1 * * e * * *  
+   --{c = xout}--{o -> b1@x, b -> b/b1}-->  
+   qs2 * * b1@x * * xout b/b1  
+     --{b = !e}--{ }-->  [qhuo]
+    --{b = e}--{c -> e}--> 
+    qs3 * * b1@x * * e e
+      --{ }--{ }-->  [qhuo]
+  --{c = e}--{ }--> 
+  qs4 * * e * e *  
+
+
 UTC20161026
 
 stem
