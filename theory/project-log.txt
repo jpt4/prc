@@ -1,5 +1,23 @@
-UTC20161017
+UTC20170101
 
+On reversible reconfiguration:
+
+The primary technical question of interest is that of reversible
+reconfigurability. Logical reversibility is physical permutation, a
+Rubik's cube of transitions between states, the sequence of which
+encodes computation. A reversible, reconfigurable, universal,
+primitive (i.e. realizable near the bedrock of physics) model of
+computation must stash those of its symbol-bearing elements which do
+not, or can't, due to innate or relational disutility, currently
+support useful logical operations, in such a place that they might be
+recalled to action when needed. All logic bearing elements are always
+persistent; similarities to the problems of garbage collection and
+efficient memory layouts of immutable data structures immediately
+present themselves. The simplest form of semantic reversibility is the
+swap; a revised model of the UC will define data movement in terms of
+atomic swaps.
+
+UTC20161017
 
 UTC20160627 
 
@@ -24,6 +42,7 @@ Whether by verbosity or punctuation overloading, names acquire brevet
 semantic hierarchies.
 
 UTC20160607
+
 A wire cell permutes the state of the data structure: [nbo inp
 out]. At the coarsest grain, each field can be occupied (1), or
 unoccupied (1), yielding eight combinations. However, a wire only
