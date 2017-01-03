@@ -2,7 +2,7 @@ A mathematical formalization of the Universal Cell
 
 jpt4
 
-UTC20161208-10,25
+UTC20161208-10,25;20170102
 
 sta typ ups inp out mem aut con buf
 s   t   u   i   o   m   a   c   b
@@ -14,7 +14,7 @@ qa0 t=* u=* i=* o=* m=* a=* c=* b=*
   +--{t = stem}--{ }-->  stem: qs0 u=* i=* o=* m=* a=* c=* b=*
 
 qhuo:
-qhuo --{ }--{u -> *, o -> *}-->  qa0
+qhuo  --{ }--{u -> *, o -> *}-->  qa0
 
 qhu:
 qhu  --{ }--{u -> *}-->  qa0
@@ -64,33 +64,40 @@ qs0 u=* i=* o=* m=* s=* c=* b=*
   | +--{o = !e}--{ }-->  [qhuo]
   +--{o = e}--{ }-->  
     qs1 * * e * * * *  
-      | +--{c = xout}--{o -> b1@x, b -> b/b1}-->  
-      |   qs2 * * b1@x * * xout b/b1  
-      |     | +--{b = !e}--{ }-->  [qhuo]
-      |     +--{b = e}--{c -> e}--> 
-      |       qs3 * * b1@x * * e e
-      |         +--{ }--{ }-->  [qhuo]
-      +--{c = e}--{ }--> 
-        qs4 * * e * * e *  
-          +--{a = e}--{ }-->  
-            qs5 * * e * e e *
-      
-      --{u = e}--{ }--> [qhu]
-     +--{u = !e}--{u -> e, i -> u}-->
-      qs6 e u e * e e *
-       | +--{i = si}--{i -> e}--> 
-       | qs7 e e e * e e * 
-       |    +--{ }--{ }-->  [qhu]
-       +--{i = sss@x}--{i -> e, c -> xin, b -> i}-->
-        qs8 e e e * e xin i
-         --{ }--{ }-->  [qhu]
-       --{i = ss}--{i -> e}
-       qs9 e e e * e e *
-         --{ }--{ }-->  [qhu]
-   --{a = !e}--{ }-->  [qs10 process-automail]
+      | | +--{c = xout}--{o -> b1@x, b -> b/b1}-->  
+      | |   qs2 * * b1@x * * xout b/b1  
+      | |     | +--{b = !e}--{ }-->  [qhuo]
+      | |     +--{b = e}--{c -> e}--> 
+      | |       qs3 * * b1@x * * e e
+      | |         +--{ }--{ }-->  [qhuo]
+      | +--{c = e}--{ }--> 
+      |   qs4 * * e * * e *  
+      |     | +--{a = e}--{ }-->  
+      |     |   qs5 * * e * e e *
+      |     |     | +--{u = e}--{ }--> [qhu]
+      |     |     +--{u = !e}--{u -> e, i -> u}-->
+      |     |       qs6 e u e * e e *
+      |     |         | +--{i = Esi | ss>1}--{i -> e}--> 
+      |     |         |   qs7 e e e * e e * 
+      |     |         |     +--{ }--{ }-->  [qhu]
+      |     |         +--{i = sss@x}--{i -> e, c -> xin, b -> i}-->
+      |     |           qs8 e e e * e xin i
+      |     |             +--{ }--{ }-->  [qhu]
+      |     +--{a = !e}--{ }-->  [qs9 process-automail]
+      +--{c = xin}--{ }-->
+        qs14 * * e * * xin *
+          | +--{u = e}--{ }-->  [qhu]
+          +--{u = !e}--{u -> e, i -> u}-->
+            qs15 e u e * * xin *
+              | +--{i = Esi | Esss@!x}--{i -> e}-->
+              |   qs16 e e e * * xin *
+              |     +--{ }-{ }-->  [qhu]
+              +--{i = sss@xin}--{i -> e, b -> b+i}-->
+                qs17 e e e * * xin b+i
+                  | +--{b = !full}--{ }-->  [qhu]
+                  +--{b = full}--{ }-->  [qs18 process-buffer]
 
-
-si := input channels contain at least one stem-init token, arbitrary others.
+si := input channel contains stem-init token.
 
 UTC20161026
 
