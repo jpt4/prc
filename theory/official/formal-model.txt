@@ -83,7 +83,7 @@ qs0 u=* i=* o=* m=* s=* c=* b=*
       |     |         +--{i = sss@x}--{i -> e, c -> xin, b -> i}-->
       |     |           qs8 e e e * e xin i
       |     |             +--{ }--{ }-->  [qhu]
-      |     +--{a = !e}--{ }-->  [qs9 process-automail]
+      |     +--{a = !e}--{ }-->  [qs9 * * e * !e e * process-automail]
       +--{c = xin}--{ }-->
         qs14 * * e * * xin *
           | +--{u = e}--{ }-->  [qhu]
@@ -95,7 +95,26 @@ qs0 u=* i=* o=* m=* s=* c=* b=*
               +--{i = sss@xin}--{i -> e, b -> b+i}-->
                 qs17 e e e * * xin b+i
                   | +--{b = !full}--{ }-->  [qhu]
-                  +--{b = full}--{ }-->  [qs18 process-buffer]
+                  +--{b = full}--{ }-->  [qs18 e e e * * xin full process-buffer]
+
+process-automail:
+qs9 * * e * !e e *
+  | | | +--{a = wr}--{t -> wire, i -> e, m -> r, a -> e, b -> e}-->
+  | | |   qs10 wire * e e r e e e
+  | | |     +--{ }--{ }-->  [qhu]
+  | | +--{a = wl}--{t -> wire, i -> e, m -> l, a -> e, b -> e}-->
+  | |   qs11 wire * e e l e e e
+  | |     +--{ }--{ }-->  [qhu]
+  | +--{a = pr}--{t -> proc, i -> e, m -> r, a -> e, b -> e}-->
+  |   qs12 proc * e e r e e e
+  |     +--{ }--{ }-->  [qhu]
+  +--{a = pl}--{t -> proc, i -> e, m -> l, a -> e, b -> e}-->
+    qs13 proc * e e r e e e
+      +--{ }--{ }-->  [qhu]
+
+process-buffer:
+qs18 e e e * * xin full
+  +--{b = id + 10b5}--{
 
 si := input channel contains stem-init token.
 
