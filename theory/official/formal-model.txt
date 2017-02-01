@@ -2,7 +2,7 @@ A mathematical formalization of the Universal Cell
 
 jpt4
 
-UTC20161208-10,25;20170102
+UTC20161208-10,25;20170102;20170201
 
 sta typ ups inp out mem aut con buf
 s   t   u   i   o   m   a   c   b
@@ -91,7 +91,7 @@ qs0 u=* i=* o=* m=* s=* c=* b=*
             qs15 e u e * * xin *
               | +--{i = Esi | Esss@!x}--{i -> e}-->
               |   qs16 e e e * * xin *
-              |     +--{ }-{ }-->  [qhu]
+              |     +--{ }--{ }-->  [qhu]
               +--{i = sss@xin}--{i -> e, b -> b+i}-->
                 qs17 e e e * * xin b+i
                   | +--{b = !full}--{ }-->  [qhu]
@@ -114,8 +114,27 @@ qs9 * * e * !e e *
 
 process-buffer:
 qs18 e e e * * xin full
-  +--{b = id + 10b5}--{
-
+  | | | | | | +--{b = id + msg}--{o -> b1@xr, a -> msg, c -> xrout, b -> b/b1}-->
+  | | | | | |   q19 e e b1@xr * msg xrout b/b1
+  | | | | | |     +--{ }--{ }-->  [qhuo]
+  | | | | | +--{b = id + 10b5}--{o -> b1@xr, c -> xrout, b -> b/b1/b5}-->
+  | | | | |   q20 e e b1@xr * * xrout b/b1/b5
+  | | | | |     +--{ }--{ }-->  [qhuo]
+  | | | | +--{b = id + 11b5}--{o -> b1@xr, c -> xrout, b -> b/b1}-->
+  | | | |   q21 e e b1@xr * * xrout b/b1
+  | | | |     +--{ }--{ }-->  [qhuo]
+  | | | +--{b = tar + 0b4}--{o -> b4@tc, c -> tcout}-->
+  | | |   q22 e e b4@tc * * tcout tar+0b4
+  | | |     +--{ }--{ }-->  [qhuo]
+  | | +--{b = tar + sic}--{o -> si@tc, c -> xnrout}-->
+  | |   q23 e e si@tc * * xnrout tar+sic
+  | |     +--{ }--{ }-->  [qhuo]
+  | +--{b = id + nop}--{o -> b1@xr, c -> xrout, b -> b/b1}-->
+  |   q24 e e b1@xr * * xrout b/b1
+  |     +--{ }--{ }-->  [qhuo]
+  +--{b = tar + nop}--{o -> b1@tc, c -> tcout, b -> b/b1}-->
+    q25 e e b1@tc * * tcout b/b1
+      +--{ }--{ }-->  [qhuo]
 si := input channel contains stem-init token.
 
 UTC20161026
