@@ -18,11 +18,14 @@
           (mutable automail aut aut!)
           (mutable control con con!)
           (mutable buffer buf buf!)))
+(define (asm-all-data uc-asm)
+  (list (sta uc-asm) (typ uc-asm) (ups uc-asm) (inp uc-asm)
+        (out uc-asm) (mem uc-asm) (aut uc-asm) (con uc-asm) (buf uc-asm)))
+(define (proc-data uc-asm)
+  (list (sta uc-asm) (ups uc-asm) (inp uc-asm) (out uc-asm) (mem uc-asm)))
 
 (define (activate asm)
-  (let ([asm-data (list
-                   (sta asm) (typ asm) (ups asm) (inp asm) (out asm)
-                   (mem asm) (aut asm) (con asm) (buf asm))])
+  (let ([asm-data (asm-all-data asm)])
     (match asm-data
            [(qa0 wire ,u ,i ,o ,m ,a ,c ,b)
             (begin
