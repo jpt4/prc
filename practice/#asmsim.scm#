@@ -141,3 +141,7 @@
          [(,u ,i ,o ,m ,a ,c ,b) (guard? (not-empty o))
           (halt asm)]
          [(,u ,i empty ,m ,a ,c ,b)
+          (qs1 (sta! 'qs1 asm))]))
+(define (qs0 asm)
+  (match (stem-data asm)
+         [(,u ,i empty ,m 

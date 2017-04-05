@@ -8,7 +8,7 @@ The directory *theory* is everything which does not execute (prose),
 *practice* everything that does (code). Meta-data and compliance
 documents (etc.) may not follow this schema.
 
-Developed against GNU Guile.
+Developed against Chez Scheme v9.4.
 
 Released under the MIT License.
 
