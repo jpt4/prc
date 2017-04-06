@@ -49,7 +49,7 @@
 ;;monolithic matching
 (define (wire-step asm)
   (match (all-asm-data asm)
-         [(qw0 ,u ,i ,o ,m) (guard (not-empty? o))
+         [(qw0 ,u ,i ,o ,m) (guard (non-empty? o))
           (halt asm)]
          [(qw0 ,u ,i ,o ,m) (guard (empty? o))
           (begin
@@ -57,27 +57,27 @@
             (wire-step asm))]
          [(qw1 ,u ,i empty ,m) (guard (empty? u))
           (halt asm)]
-         [(qw1 ,u ,i empty ,m) (guard (not-empty? u))
+         [(qw1 ,u ,i empty ,m) (guard (non-empty? u))
           (begin
             (ups! asm empty) (inp! asm u)
             (wire-step asm))]
-         [(qw2 empty ,i empty ,m) (guard? (contains-stem-init? i))
+         [(qw2 empty ,i empty ,m) (guard (contains-stem-init? i))
           (begin
             (sta! asm 'qw3)
             (typ! asm 'stem) (inp! asm empty) (mem! asm right) 
             (aut! asm empty) (con! asm empty) (buf! asm empty)
             (halt asm))] ;;collapse qw3 due to asm/asm-data mismatch
-         [(qw2 empty ,i empty ,m) (guard? (all-standard-signals? i))
+         [(qw2 empty ,i empty ,m) (guard (all-standard-signals? i))
           (begin
             (sta! asm qw4)
             (wire-step asm))]
-         [(qw4 empty ,i empty ,m) (guard? (equals? right m))
+         [(qw4 empty ,i empty ,m) (guard (equals? right m))
           (begin
             (sta! asm 'qw5) (inp! asm empty) (out! asm (right-rotate i))
             (wire-step asm))]
          [(qw5 empty empty ,o right)
           (halt asm)]
-         [(qw4 empty ,i empty ,m) (guard? (equals? left m))
+         [(qw4 empty ,i empty ,m) (guard (equals? left m))
           (begin
             (sta! asm 'qw6) (inp! asm empty) (out! asm (left-rotate i))
             (wire-step asm))]
@@ -90,7 +90,7 @@
   (qp0 asm))
 (define (qp0 asm)  
   (match (proc-data asm)
-         [(,u ,i ,o ,m) (guard (not-empty? o))
+         [(,u ,i ,o ,m) (guard (non-empty? o))
           (halt asm)]
          [(,u ,i ,o ,m) (guard (empty? o))
           (qp1 (sta! 'qp1 asm))]))
@@ -98,18 +98,18 @@
   (match (proc-data asm)
          [(,u ,i empty ,m) (guard (empty? u))
           (halt asm)]
-         [(,u ,i empty ,m) (guard (not-empty? u))
+         [(,u ,i empty ,m) (guard (non-empty? u))
           (begin
             (ups! asm empty) (inp! asm u)
             (qp2 (sta! 'qp2 asm)))]))
 (define (qp2 asm)
   (match (proc-data asm)
-         [(empty ,i empty ,m) (guard? (contains-stem-init? i))
+         [(empty ,i empty ,m) (guard (contains-stem-init? i))
           (begin
             (typ! asm 'stem) (inp! asm empty) (mem! asm right) 
             (aut! asm empty) (con! asm empty) (buf! asm empty)
             (qp3 (sta! 'qp3 asm)))] ;no need to collapse qw3 due to (proc-data)
-         [(empty ,i empty ,m) (guard? (all-standard-signals? i))
+         [(empty ,i empty ,m) (guard (all-standard-signals? i))
           (qp4 (sta! 'qp4 asm))]))
 (define (qp3 asm)
   (match (proc-data asm)
@@ -117,11 +117,11 @@
           (halt asm)]))
 (define (qp4 asm)
   (match (proc-data asm)
-         [(empty ,i empty ,m) (guard? (equals? right m))
+         [(empty ,i empty ,m) (guard (equals? right m))
           (begin
             (inp! asm empty) (out! asm (right-rotate i))
             (qp5 (sta! 'qp5 asm)))]
-         [(empty ,i empty ,m) (guard? (equals? left m))
+         [(empty ,i empty ,m) (guard (equals? left m))
           (begin
             (inp! asm empty) (out! asm (left-rotate i))
             (qp6 (st! 'qp6 asm)))]))
@@ -138,6 +138,66 @@
   (qs0 asm))
 (define (qs0 asm)
   (match (stem-data asm)
-         [(,u ,i ,o ,m ,a ,c ,b) (guard? (not-empty o))
+         [(,u ,i ,o ,m ,a ,c ,b) (guard (not-empty o))
           (halt asm)]
          [(,u ,i empty ,m ,a ,c ,b)
+          (qs1 (sta! 'qs1 asm))]))
+(define (qs1 asm)
+  (match (stem-data asm)
+         [(,u ,i empty ,m ,a ,c ,b) (guard (xout? c))
+          (begin
+            (out! (car b) asm) 
+            (buf! (cdr b) asm) ;should be more generic buffer operators
+            (qs2 (sta! 'qs2 asm)))]
+         [(,u ,i empty ,m ,a ,c ,b) (guard (empty? c))
+          (qs4 (sta! 'qs4 asm))]
+         [(,u ,i empty ,m ,a ,c ,b) (guard (xin? c))
+          (qs14 (sta! 'qs14 asm))]))
+(define (qs2 asm)
+  (match (stem-data asm)
+         ;cannot inline out and buf values in match structure because
+         ;they are not syntactic. pattern matching is done as a
+         ;convenience to destructure asm data, "state" field is
+         ;sufficient to distinguish one from another.
+         [(,u ,i ,o ,m ,a (,x ,out) ,b) (guard (non-empty? b))
+          (halt asm)]
+         [(,u ,i ,o ,m ,a (,x ,out) ,b) (guard (empty? b))
+          (begin
+            (con! empty asm) 
+            (qs3 (sta! 'qs3 asm)))]))
+(define (qs3 asm)
+  (match (stem-data asm)
+         [(,u ,i ,o ,m ,a empty empty)
+          (halt asm)]))
+(define (qs4 asm)
+  (match (stem-data asm)
+         [(,u ,i empty ,m ,a empty ,b) (guard (empty? a))
+          (qs5 (sta! 'qs5 asm))]
+         [(,u ,i empty ,m ,a empty ,b) (guard (non-empty? a))
+          (qs9 (sta! 'qs9 asm))#;process-automail]))
+(define (qs5 asm)
+  (match (stem-data asm)
+         [(,u ,i empty ,m empty empty ,b) (guard (empty? u))
+          (halt asm)]
+         [(,u ,i empty ,m empty empty ,b) (guard (non-empty? u))
+          (begin
+            (ups! empty asm) (inp! u asm)
+            (qs6 (sta! 'qs6 asm)))]))
+(define (qs6 asm)
+  (match (stem-data asm)
+         [(empty ,i empty ,m empty empty ,b) 
+          (guard (or (contains-stem-init? i) (>1-standard-signal? i)))
+          (begin
+            (inp! empty asm)
+            (qs7 (sta! 'qs7 asm)))]
+         [(empty ,i empty ,m empty empty ,b) (guard (sss@x? i))
+          (begin
+            (inp! empty asm) (con! (xin i) asm) (buf! i asm)
+            (qs8 (sta! 'qs8 asm)))]))
+(define (qs7 asm)
+  (match (stem-data asm)
+         [(empty empty empty ,m empty emtpy ,b)
+          (halt asm)]
+          
+          
+            
