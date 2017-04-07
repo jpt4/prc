@@ -135,19 +135,16 @@
             (halt asm)]))
 
 (define (stem-step asm)
-  (qs0 asm))
-(define (qs0 asm)
-  (match (stem-data asm)
-         [(,u ,i ,o ,m ,a ,c ,b) (guard (not-empty o))
-          (halt asm)]
-         [(,u ,i empty ,m ,a ,c ,b)
-          (qs1 (sta! 'qs1 asm))]))
-(define (qs1 asm)
-  (match (stem-data asm)
-         [(,u ,i empty ,m ,a ,c ,b) (guard (xout? c))
-          (begin
-            (out! (car b) asm) 
-            (buf! (cdr b) asm) ;should be more generic buffer operators
+  (match (all-asm-data asm)
+         [(,s ,t ,u ,i ,o ,m ,a ,c ,b)
+          (cond
+           [(not-empty? o) (halt asm)]
+           [(empty? o) (sta! 'qs1 asm)
+            (cond
+             [(xout? c) 
+              (begin 
+                (out! (car b) asm) 
+                (buf! (cdr b) asm) ;should be more generic buffer operators
             (qs2 (sta! 'qs2 asm)))]
          [(,u ,i empty ,m ,a ,c ,b) (guard (empty? c))
           (qs4 (sta! 'qs4 asm))]
@@ -166,15 +163,14 @@
             (con! empty asm) 
             (qs3 (sta! 'qs3 asm)))]))
 (define (qs3 asm)
-  (match (stem-data asm)
-         [(,u ,i ,o ,m ,a empty empty)
-          (halt asm)]))
+  (halt asm))
 (define (qs4 asm)
   (match (stem-data asm)
-         [(,u ,i empty ,m ,a empty ,b) (guard (empty? a))
-          (qs5 (sta! 'qs5 asm))]
-         [(,u ,i empty ,m ,a empty ,b) (guard (non-empty? a))
-          (qs9 (sta! 'qs9 asm))#;process-automail]))
+         [(,u ,i empty ,m ,a empty ,b)
+          (cond
+           [(empty? a) (qs5 (sta! 'qs5 asm))]
+           [(non-empty? a) (qs9 (sta! 'qs9 asm))#;process-automail]))
+            
 (define (qs5 asm)
   (match (stem-data asm)
          [(,u ,i empty ,m empty empty ,b) (guard (empty? u))
@@ -197,7 +193,8 @@
 (define (qs7 asm)
   (match (stem-data asm)
          [(empty empty empty ,m empty emtpy ,b)
-          (halt asm)]
+          (halt asm)]))
+(define (
           
           
             
