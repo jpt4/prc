@@ -169,7 +169,7 @@
          [(,u ,i empty ,m ,a empty ,b)
           (cond
            [(empty? a) (qs5 (sta! 'qs5 asm))]
-           [(non-empty? a) (qs9 (sta! 'qs9 asm))#;process-automail]))
+           [(non-empty? a) (qs9 (sta! 'qs9 asm))#;process-automail])]))
             
 (define (qs5 asm)
   (match (stem-data asm)
