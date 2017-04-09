@@ -194,7 +194,8 @@
   (match (stem-data asm)
          [(empty empty empty ,m empty emtpy ,b)
           (halt asm)]))
-(define (
+(define (qs8 asm)
+  (
           
           
             
