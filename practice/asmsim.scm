@@ -137,19 +137,63 @@
 (define (stem-step asm)
   (match (all-asm-data asm)
          [(,s ,t ,u ,i ,o ,m ,a ,c ,b)
-          (cond
-           [(not-empty? o) (halt asm)]
-           [(empty? o) (sta! 'qs1 asm)
-            (cond
-             [(xout? c) 
-              (begin 
-                (out! (car b) asm) 
-                (buf! (cdr b) asm) ;should be more generic buffer operators
-            (qs2 (sta! 'qs2 asm)))]
-         [(,u ,i empty ,m ,a ,c ,b) (guard (empty? c))
-          (qs4 (sta! 'qs4 asm))]
-         [(,u ,i empty ,m ,a ,c ,b) (guard (xin? c))
-          (qs14 (sta! 'qs14 asm))]))
+          (case s
+            [halt "TODO"]
+            [qs0 (cond o
+                  [(not-empty? o) (sta! 'qhuo asm)]
+                  [(empty? o) (sta! 'qs1 asm)])]
+            [qs1 (cond
+                  [(xout? c) (out! (b1@x b c) asm) (buf! (b/b1 b) asm)
+                   (sta! 'qs2 asm)]
+                  [(empty? c) (sta! 'qs4 asm)])]
+            [qs2 (cond
+                  [(non-empty? b) (sta! 'qhuo asm)]
+                  [(empty? b) (con! empty asm) (sta! 'qs3 asm)])]
+            [qs3 (sta! 'qhuo asm)]
+            [qs4 (cond
+                  [(empty? a) (sta! 'qs5 asm)]
+                  [(non-empty? a) (sta! 'qs9 asm)]
+                  [(xin? c) (sta! 'qs14 asm)])]
+            [qs5 (cond
+                  [(empty? u) (sta! 'qhu asm)]
+                  [(non-empty? u) (ups! empty asm) (inp! u asm) 
+                   (sta! 'qs6 asm)])]
+            [qs6 (cond
+                  [(Esi-or-ss>1? i) (inp! empty asm) (sta! 'qs7 asm)]
+                  [(sss@x? i) (inp! empty asm) (con! (xin i) asm) 
+                   (buf! (extract-signal i) asm) (sta! 'qs8 asm)])]
+            [qs7 (sta! 'qhu asm)]
+            [qs8 (sta! 'qhu asm)]
+            ;process-automail
+            [qs9 (case a
+                  [wr (typ! wire asm) (inp! empty asm) (mem! right asm)
+                      (aut! empty asm) (buf! empty asm) (sta! 'qs10 asm)]
+                  [wl (typ! wire asm) (inp! empty asm) (mem! left asm)
+                      (aut! empty asm) (buf! empty asm) (sta! 'qs11 asm)]
+                  [pr (typ! proc asm) (inp! empty asm) (mem! right asm)
+                      (aut! empty asm) (buf! empty asm) (sta! 'qs12 asm)]
+                  [pl (typ! proc asm) (inp! empty asm) (mem! left asm)
+                      (aut! empty asm) (buf! empty asm) (sta! 'qs13 asm)])]
+            [qs10 (sta! 'qhu asm)]
+            [qs11 (sta! 'qhu asm)]
+            [qs12 (sta! 'qhu asm)]
+            [qs13 (sta! 'qhu asm)]
+            [qs14 (cond
+                   [(empty? e) (sta! 'qhu asm)]
+                   [(non-empty? e) (ups! empty asm) (inp! u asm) 
+                    (sta! 'qs15 asm)])]
+            [qs15 (cond
+                   [(Esi-or-Esss@!x? i) (inp! empty asm) (sta! 'qs16 asm)]
+                   [(sss@x? i) (inp! empty asm) (buf! (b+i b i) asm)
+                    (sta! 'qs17 asm)])]
+            [qs16 (sta! 'qhu asm)]
+            [qs17 (cond
+                   [(non-full? b) (sta! 'qhu asm)]
+                   [(full? b) (sta! 'qs18 asm)])]
+            ;process-buffer
+            [qs18 ]
+            
+
 (define (qs2 asm)
   (match (stem-data asm)
          ;cannot inline out and buf values in match structure because

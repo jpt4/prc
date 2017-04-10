@@ -92,7 +92,7 @@ qs0 u=* i=* o=* m=* a=* c=* b=*
               | +--{i = Esi | Esss@!x}--{i -> e}-->
               |   qs16 e e e * * xin *
               |     +--{ }--{ }-->  [qhu]
-              +--{i = sss@xin}--{i -> e, b -> b+i}-->
+              +--{i = sss@x}--{i -> e, b -> b+i}-->
                 qs17 e e e * * xin b+i
                   | +--{b = !full}--{ }-->  [qhu]
                   +--{b = full}--{ }-->  [qs18 e e e * * xin full process-buffer]
