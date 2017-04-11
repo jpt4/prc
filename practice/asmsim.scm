@@ -165,15 +165,15 @@
             [qs7 (sta! 'qhu asm)]
             [qs8 (sta! 'qhu asm)]
             ;process-automail
-            [qs9 (case a
-                  [wr (typ! wire asm) (inp! empty asm) (mem! right asm)
-                      (aut! empty asm) (buf! empty asm) (sta! 'qs10 asm)]
-                  [wl (typ! wire asm) (inp! empty asm) (mem! left asm)
-                      (aut! empty asm) (buf! empty asm) (sta! 'qs11 asm)]
-                  [pr (typ! proc asm) (inp! empty asm) (mem! right asm)
-                      (aut! empty asm) (buf! empty asm) (sta! 'qs12 asm)]
-                  [pl (typ! proc asm) (inp! empty asm) (mem! left asm)
-                      (aut! empty asm) (buf! empty asm) (sta! 'qs13 asm)])]
+            [qs9 (cond
+                  [(wr? a) (typ! wire asm) (inp! empty asm) (mem! right asm)
+                   (aut! empty asm) (buf! empty asm) (sta! 'qs10 asm)]
+                  [(wl? a) (typ! wire asm) (inp! empty asm) (mem! left asm)
+                   (aut! empty asm) (buf! empty asm) (sta! 'qs11 asm)]
+                  [(pr? a) (typ! proc asm) (inp! empty asm) (mem! right asm)
+                   (aut! empty asm) (buf! empty asm) (sta! 'qs12 asm)]
+                  [(pl? a) (typ! proc asm) (inp! empty asm) (mem! left asm)
+                   (aut! empty asm) (buf! empty asm) (sta! 'qs13 asm)])]
             [qs10 (sta! 'qhu asm)]
             [qs11 (sta! 'qhu asm)]
             [qs12 (sta! 'qhu asm)]
@@ -191,7 +191,16 @@
                    [(non-full? b) (sta! 'qhu asm)]
                    [(full? b) (sta! 'qs18 asm)])]
             ;process-buffer
-            [qs18 ]
+            ;need documentation here
+            [qs18 (cond
+                   [(id+msg? b) ]
+                   [(id+10b5? b)]
+                   [(id+11b5? b)]
+                   [(tar+0b4? b)]
+                   [(tar+sic? b)]
+                   [(id+nop? b)]
+                   [(tar+nop? b)]
+                   )]
             
 
 (define (qs2 asm)
