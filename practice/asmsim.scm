@@ -180,3 +180,6 @@
 ;;auxiliary functions
 (define (non-empty? ls) (not (null? ls)))
 (define (empty? ls) (null? ls))
+(define (Esi? ls) (count 'si ls))
+(define (count sym ls) 
+  (length (filter (lambda (e) (eq? sym e)) ls)))
