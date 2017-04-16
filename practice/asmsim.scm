@@ -18,10 +18,11 @@
           (mutable automail aut aut!)
           (mutable control con con!)
           (mutable buffer buf buf!)))
+;;access asm fields
 (define (asm-data uc-asm)
   (list (sta uc-asm) (typ uc-asm) (ups uc-asm) (inp uc-asm)
         (out uc-asm) (mem uc-asm) (aut uc-asm) (con uc-asm) (buf uc-asm)))
-
+;;activation
 (define (activate asm)
   (match (asm-data asm)
          [(,s ,t ,u ,i ,o ,m ,a ,c ,b)
@@ -29,7 +30,12 @@
             [wire (sta! asm 'qw0) (wire-step asm)]
             [proc (sta! asm 'qp0) (proc-step asm)]
             [stem (sta! asm 'qs0) (stem-step asm)]
-            ))))
+            )]))
+;;halt
+(define (qhu asm)
+  (sta! 'halt asm))
+(define (qhuo asm)
+  (sta! 'halt asm))
 ;;wire
 (define (wire-step asm)
   (match (asm-data asm)
@@ -175,11 +181,25 @@
           (case s ;leave or stay within asm hierarchy
             [qhu (qhu asm)]
             [qhuo (qhuo asm)]
-            [(stem-step asm)])
+            [else (stem-step asm)])
           ]))
-;;auxiliary functions
-(define (non-empty? ls) (not (null? ls)))
-(define (empty? ls) (null? ls))
-(define (Esi? ls) (count 'si ls))
-(define (count sym ls) 
-  (length (filter (lambda (e) (eq? sym e)) ls)))
+;;auxiliary definitions in order of first use
+(define empty '(_ _ _)
+;empty vs clear vs no-mail?
+(define (non-empty? ls) (not (eq? ls empty)))
+(define (empty? ls) (eq? ls empty))
+(define (Esi? ls) (eq? (filter (lambda (e) (eq? 'si e)) ls) '(si)))
+;note - channel valence dependent
+(define (ss? i) (eq? (length (filter (lambda (e) (or (eq? 1 e) (eq? 0 e))) ls))
+                     3))                             
+(define (r? m) (eq? right m))
+(define (ir i) (list (caddr i) (car i) (cadr i)))
+(define (l? m) (eq? left m))
+(define (ir i) (list (cadr i) (caddr i) (car i)))
+;stem helpers
+(define (xout? c) (and (number? (car c))
+                       (eq? (cadr c) 'out)))
+(define (b1@x b c) (vector-set! (vector '_ '_ '_) 
+                                (vector-ref c 0) 
+                                (vector-ref b 1)))
+                       
