@@ -18,6 +18,7 @@
           (mutable automail aut aut!)
           (mutable control con con!)
           (mutable buffer buf buf!)))
+;;asm internal data structure(s)
 ;;access asm fields
 (define (asm-data uc-asm)
   (list (sta uc-asm) (typ uc-asm) (ups uc-asm) (inp uc-asm)
@@ -199,7 +200,6 @@
 ;stem helpers
 (define (xout? c) (and (number? (car c))
                        (eq? (cadr c) 'out)))
-(define (b1@x b c) (vector-set! (vector '_ '_ '_) 
-                                (vector-ref c 0) 
-                                (vector-ref b 1)))
-                       
+(define (b1@x b c) 
+                     
+(define (b/b1 b) (
