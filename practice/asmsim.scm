@@ -108,15 +108,15 @@
             [qs1 (cond
                   [(xout? c) (out! (b1@x b c) asm) (buf! (b/b1 b) asm)
                    (sta! 'qs2 asm)]
-                  [(empty? c) (sta! 'qs4 asm)])]
+                  [(empty? c) (sta! 'qs4 asm)]
+                  [(xin? c) (sta! 'qs14 asm)])]
             [qs2 (cond
                   [(non-empty? b) (sta! 'qhuo asm)]
                   [(empty? b) (con! empty asm) (sta! 'qs3 asm)])]
             [qs3 (sta! 'qhuo asm)]
             [qs4 (cond
                   [(empty? a) (sta! 'qs5 asm)]
-                  [(non-empty? a) (sta! 'qs9 asm)]
-                  [(xin? c) (sta! 'qs14 asm)])]
+                  [(non-empty? a) (sta! 'qs9 asm)])]
             [qs5 (cond
                   [(empty? u) (sta! 'qhu asm)]
                   [(non-empty? u) (ups! empty asm) (inp! u asm) 
@@ -200,6 +200,14 @@
 ;stem helpers
 (define (xout? c) (and (number? (car c))
                        (eq? (cadr c) 'out)))
-(define (b1@x b c) 
-                     
-(define (b/b1 b) (
+(define (xin? c) (and (number? (car c))
+                       (eq? (cadr c) 'in)))
+(define (b1@x b c) (case (car c)
+                     [0 (list (car b) '_ '_)]
+                     [1 (list '_ (car b) '_)]
+                     [2 (list '_ '_ (car b))]))
+(define (b/b1 b) (cdr b))
+;xin not yet set
+(define (sss@x? i) 
+  (and (eq? 1 (length (filter (lambda (a) (or (eq? 1 a) (eq? 0 a))) i)))
+       (eq? 2 (length (filter (lambda (a) (eq? '_ a)) i)))))
