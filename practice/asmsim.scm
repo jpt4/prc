@@ -19,6 +19,9 @@
           (mutable control con con!)
           (mutable buffer buf buf!)))
 ;;asm internal data structure(s)
+#|
+('qs0 'stem '(_ _ _) '(_ _ _) '(_ _ _) 'right '_ '() '())
+|#
 ;;access asm fields
 (define (asm-data uc-asm)
   (list (sta uc-asm) (typ uc-asm) (ups uc-asm) (inp uc-asm)
@@ -124,7 +127,7 @@
             [qs6 (cond
                   [(Esi-or-ss>1? i) (inp! empty asm) (sta! 'qs7 asm)]
                   [(sss@x? i) (inp! empty asm) (con! (xin i) asm) 
-                   (buf! (extract-signal i) asm) (sta! 'qs8 asm)])]
+                   (buf! (sss-of-i i) asm) (sta! 'qs8 asm)])]
             [qs7 (sta! 'qhu asm)]
             [qs8 (sta! 'qhu asm)]
             ;process-automail
@@ -207,7 +210,16 @@
                      [1 (list '_ (car b) '_)]
                      [2 (list '_ '_ (car b))]))
 (define (b/b1 b) (cdr b))
-;xin not yet set
+(define (Esi-or-ss>1? i) 
+  (or (member 'si i) 
+      (> 1 (length (filter (lambda (a) (or (eq? 1 a) (eq? 0 a))) i)))))
 (define (sss@x? i) 
   (and (eq? 1 (length (filter (lambda (a) (or (eq? 1 a) (eq? 0 a))) i)))
        (eq? 2 (length (filter (lambda (a) (eq? '_ a)) i)))))
+(define (xin i) (list (max (- 3 (length (member 0 i)))
+                           (- 3 (length (member 1 i))))
+                      'in))
+(define (sss-of-i i) (filter (lambda (a) (or (eq? 1 a) (eq? 0 a))) i))
+;process-automail helpers
+(define (wr? a) (eq? 'wr a)
+(define (Esi-or-Esss@!x i c)

@@ -80,7 +80,7 @@ qs0 u=* i=* o=* m=* a=* c=* b=*
       |     |         | +--{i = Esi | ss>1}--{i -> e}--> 
       |     |         |   qs7 e e e * e e * 
       |     |         |     +--{ }--{ }-->  [qhu]
-      |     |         +--{i = sss@x}--{i -> e, c -> xin, b -> i}-->
+      |     |         +--{i = sss@x}--{i -> e, c -> xin, b -> sss(i)}-->
       |     |           qs8 e e e * e xin i
       |     |             +--{ }--{ }-->  [qhu]
       |     +--{a = !e}--{ }-->  [qs9 * * e * !e e * process-automail]
