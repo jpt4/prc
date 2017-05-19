@@ -200,7 +200,7 @@
 (define (ir i) (list (caddr i) (car i) (cadr i)))
 (define (l? m) (eq? left m))
 (define (ir i) (list (cadr i) (caddr i) (car i)))
-;stem helpers
+;stem auxiliaries
 (define (xout? c) (and (number? (car c))
                        (eq? (cadr c) 'out)))
 (define (xin? c) (and (number? (car c))
@@ -220,6 +220,42 @@
                            (- 3 (length (member 1 i))))
                       'in))
 (define (sss-of-i i) (filter (lambda (a) (or (eq? 1 a) (eq? 0 a))) i))
-;process-automail helpers
+(define (Esi-or-Esss@!x i c) 'e)
+;process-automail auxiliaries
 (define (wr? a) (eq? 'wr a)
-(define (Esi-or-Esss@!x i c)
+(define (wl? a) (eq? 'wl a)
+(define (pr? a) (eq? 'pr a)
+(define (pl? a) (eq? 'pl a)
+;process-buffer auxiliaries - XXX CONFIRM MSGLIST CODES
+(define (id+msg? b) 
+  (let ([id (list-head b 2)]
+        [msg (list-tail b 2)])
+    (and (eq? id '(0 0))
+         (member msg '(msg-list)))))
+(define (id+10b5? b)
+  (let ([id (list-head b 2)]
+        [10b5 (list-tail b 2)])
+    (and (eq? id '(0 0))
+         (or (eq? '(1 0 0) 10b5)
+             (eq? '(1 0 1) 10b5)))))
+(define (id+11b5? b)
+  (let ([id (list-head b 2)]
+        [11b5 (list-tail b 2)])
+    (and (eq? id '(0 0))
+         (or (eq? '(1 1 0) 11b5)
+             (eq? '(1 1 1) 11b5)))))
+(define (tar+0b4? b)
+  (let ([tar (list-head b 2)]
+        [0b4 (list-tail b 2)])
+    (and (member tar '((0 1) (1 0) (1 1)))
+         (member 0b4 '((0 0) (0 1))))))
+(define (tar+sic? b)
+  (let ([tar (list-head b 2)]
+        [sic (list-tail b 2)])
+    (and (member tar '((0 1) (1 0) (1 1)))
+         (eq? sic '(1 1)))))
+(define (id+nop? b)
+  (eq? '(0 0 
+
+        
+                 
