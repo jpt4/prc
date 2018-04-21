@@ -66,10 +66,12 @@ Further, this hypothetical lattice of circulators and auxiliary
 circuitry seems poised for extension from one-time, pre-computation
 circuit configuration, to dynamic component-wise reconfiguration in
 the style of the RALA architecture [3], but with potentially less
-per-cell machinery. Tesellation of the plane by 2-D triangular RLEMs
-can be extended to fill 3-D space via a truncated octohedron honeycomb
-[4]; note that because every vertex intersects three edges, a 2-D
-planar mapping can be folded into 3-D space without special rerouting.
+per-cell machinery. Coverage of the plane by 2-D triangular RLEMs can
+be extended to fill 3-D space via any crystal structure with vertices
+of uniform valence, for example a diamond cubic lattice [4]. The
+defintion of the three dimensional RLEM is a direct extrapolation of
+the two dimensional; polar analogues to Right and Left planar
+rotations may be specified with no loss of cell homogeneity.
 
 [0] Morita, K. (2013) Reversible Logic Elements with Memory and Their
     Universality
@@ -82,4 +84,4 @@ planar mapping can be folded into 3-D space without special rerouting.
 [3] Gershenfeld et al. (2011) Reconfigurable Asynchronous Logic
     Automata
 
-[4] https://en.wikipedia.org/wiki/Honeycomb_%28geometry%29#/media/File:Truncated_octahedra.png
+[4] https://en.wikipedia.org/wiki/Diamond_cubic#/media/File:Diamond_lattice.stl
