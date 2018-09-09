@@ -122,15 +122,15 @@ asm internal data structure(s)
 	 [qs1 (cond
                [(xout? c) (out! asm (b1@x b c)) (buf! asm (b/b1 b))
 		(sta! asm 'qs2)]
-               [(null? c) (sta! asm 'qs4)]
+               [(clear? c) (sta! asm 'qs4)]
                [(xin? c) (sta! asm 'qs14)])]
 	 [qs2 (cond
-               [(non-empty? b) (sta! asm 'qhuo)]
-               [(empty? b) (con! empty asm) (sta! asm 'qs3)])]
+               [(non-clear? b) (sta! asm 'qhuo)]
+               [(clear? b) (con! empty asm) (sta! asm 'qs3)])]
 	 [qs3 (sta! asm 'qhuo)]
 	 [qs4 (cond
-               [(empty? a) (sta! asm 'qs5)]
-               [(non-empty? a) (sta! asm 'qs9)])]
+               [(no-mail? a) (sta! asm 'qs5)]
+               [(mail? a) (sta! asm 'qs9)])]
 	 [qs5 (cond
                [(empty? u) (sta! asm 'qhu)]
                [(non-empty? u) (ups! asm empty) (inp! asm u) 
@@ -167,8 +167,8 @@ asm internal data structure(s)
 	 [qs17 (cond
 		[(non-full? b) (sta! asm 'qhu)]
 		[(full? b) (sta! asm 'qs18)])]
-					;process-buffer
-					;need documentation here
+	 ;process-buffer
+         ;need documentation here
 	 [qs18 (cond
 		[(id+msg? b) (out! asm (b1@xr c b)) (aut! asm (msg b))
 		 (con! asm (xrout c)) (buf! asm (b/b1 b)) (sta! asm 'qs19)]
@@ -180,7 +180,7 @@ asm internal data structure(s)
 		 (sta! asm 'qs22)]
 		[(tar+sic? b) (out! asm (si@tc c)) (con! asm (xnrout c))
 		 (sta! asm 'qs23)]
-					;Is there space/should no-op control target output?
+		;Is there space/should no-op control target output?
 		[(id+nop? b) (out! asm (b1@xr c b)) (con! asm (xrout c))
 		 (buf! asm (b/b1 b)) (sta! asm 'qs24)]
 		[(tar+nop? b) (out! asm (b1@tc c b)) (con! asm (tcout b))
@@ -204,9 +204,15 @@ asm internal data structure(s)
      
 ;;auxiliary definitions in order of first use
 (define empty '(_ _ _))
-;empty vs clear vs no-mail?
+(define blank '_)
+(define clear '())
+;empty vs clear vs no-mail
 (define (non-empty? ls) (not (equal? ls empty)))
 (define (empty? ls) (equal? ls empty))
+(define (no-mail? a) (equal? a blank))
+(define (mail? a) (not (equal? a blank)))
+(define (non-clear? c) (not (equal? c clear)))
+(define (clear? c) (equal? c clear))
 (define (Esi? ls) (equal? (filter (lambda (e) (equal? 'si e)) ls) '(si)))
 ;note - channel valence dependent
 (define (ss? i) 
