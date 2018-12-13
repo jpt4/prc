@@ -254,6 +254,9 @@ asm internal data structure(s)
 (define (pr? a) (equal? 'pr a))
 (define (pl? a) (equal? 'pl a))
 ;process-buffer auxiliaries - XXX CONFIRM MSGLIST CODES
+(define max-buffer-size 5)
+(define (full? b) (= (length b) max-buffer-size))
+(define (non-full? b) (not (full? b)))
 (define (id+msg? b) 
   (let ([id (list-head b 2)]
 	[msg (list-tail b 2)])
@@ -283,7 +286,8 @@ asm internal data structure(s)
 	 (equal? sic '(1 1)))))
 (define (id+nop? b)
   (or (equal? '(0 0 1 1 0) b) (equal? '(0 0 1 1 1) b)))
-
+(define (tar+nop? b)
+  (ormap (lambda (a) (equal? a b)) '((0 1 1 1) (1 0 1 1) (1 1 1 1))))
 ;;testing
 (define asmtst (make-default-uc-asm))
 
